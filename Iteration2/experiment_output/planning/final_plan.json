@@ -1,0 +1,75 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Remove irrelevant columns (surface_energy, work_function, A_period, B_period, theoretical).",
+                "Set material_id as the index.",
+                "Apply log-transformation to volume and elastic_anisotropy.",
+                "Engineer features: abs_tau_diff = abs(tau - 1.0), radius_diff = A_radius - B_radius, en_diff = abs(B_en - A_en), en_var = variance of electronegativities (A and B), and VEC = A_valence + B_valence + 6 (for O3).",
+                "Drop radius_ratio to reduce multicollinearity.",
+                "One-hot encode or label-encode categorical columns (crystal_system, magnetic_ordering, A_site, B_site).",
+                "Print summary of final feature matrix shape and null counts.",
+                "Save the cleaned dataset to a CSV file."
+            ],
+            "sub_task": "Clean the dataset, handle missing values, and engineer new features for modeling.",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Define binary target is_stable based on energy_above_hull == 0.",
+                "Use only compositional and structural descriptors as features (exclude all DFT-derived targets).",
+                "Train a Gradient Boosted Classifier using stratified 5-fold cross-validation.",
+                "Generate and save a combined plot showing the ROC curve and top-20 feature importances.",
+                "Save model predictions and performance metrics."
+            ],
+            "sub_task": "Train a classifier to predict thermodynamic stability.",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Define \"Mechanically Viable\" class using 1st to 99th percentile clipping of the 215-sample elastic subset.",
+                "Print percentile thresholds and class distribution.",
+                "Address class imbalance using SMOTE or class-weight balancing.",
+                "Train a binary classifier (Gradient Boosted trees) using compositional/structural features only.",
+                "Evaluate using AUC-ROC and Precision-Recall AUC.",
+                "Save a combined plot showing ROC curve, PR curve, and confusion matrix.",
+                "Save model predictions."
+            ],
+            "sub_task": "Train a classifier to identify mechanically viable perovskites.",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a classifier for is_metal.",
+                "Train a regressor for band_gap on the non-metallic subset (evaluate with MAE and R²).",
+                "Define \"Ductile\" vs. \"Brittle\" using Pugh ratio threshold (G/K < 0.571).",
+                "Print class distributions.",
+                "Generate a combined figure with subplots: (a) PR curve for is_metal, (b) predicted vs. actual band_gap scatter, (c) confusion matrix for ductility.",
+                "Save model predictions."
+            ],
+            "sub_task": "Predict electronic and mechanical ductility properties.",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Define Pareto dominance (strictly better in one objective, not worse in others) using predicted probabilities.",
+                "Apply to the full 1283-compound set.",
+                "Calculate Mahalanobis distance relative to training set; flag candidates > 97.5th percentile as high-novelty.",
+                "Generate 3D scatter plot of Pareto frontier (colored by chemical system) and 2D projection.",
+                "Save final ranked candidate table as CSV."
+            ],
+            "sub_task": "Identify high-performance candidates and perform novelty analysis.",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Structure report by pipeline stage (preprocessing, stability, mechanical, electronic, Pareto).",
+                "Reference all saved plot filenames and quantitative metrics (AUC-ROC, PR-AUC, MAE, R², confusion matrix).",
+                "Discuss limitations: small elastic training set (215 samples) and implications for the 1068 uncharacterized materials.",
+                "Include a table summarizing the top-10 Pareto-optimal candidates (ID, formula, probability scores)."
+            ],
+            "sub_task": "Synthesize findings and write the final report.",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
