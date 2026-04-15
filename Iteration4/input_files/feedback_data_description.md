@@ -1,0 +1,7 @@
+The observed limitations and analytical adjustments are directly attributable to constraints described in the dataset:
+
+1. **Elastic Data Sparsity**: The "Mechanical Viability" classifier was necessitated by the constraint that only 215/1283 (17%) of materials have computed elastic constants. The extreme class imbalance (207 robust vs. 3 unstable) and the presence of "unphysical noise" (e.g., negative moduli) in the raw data forced the use of a binary classification pipeline rather than regression to avoid catastrophic model failure.
+2. **DFT Accuracy and Stability**: The low recall in thermodynamic stability classification (0.2324) is linked to the constraint that 1125/1283 materials are metastable (energy_above_hull > 0). The model's difficulty in identifying the sparse stable minority class (13.1%) reflects the inherent complexity of the provided metastable-heavy dataset.
+3. **Electronic Property Hurdle**: The use of a two-stage hurdle model for band gaps is a direct response to the dataset's zero-inflated distribution (624 metals with band_gap = 0).
+4. **Applicability Domain**: The reliance on a One-Class SVM to define an "Applicability Domain" is necessitated by the limited coverage of the elastic subset, which prevents reliable extrapolation to the 1068 uncharacterized materials.
+5. **Missing Attributes**: The exclusion of `A_period` and `B_period` was required because the dataset description explicitly states these are null for all entries due to pymatgen Element API limitations.
