@@ -1,0 +1,27 @@
+{
+  "image0": {
+    "key": "image0",
+    "name": "step_2_pr_curve_stability_1_1776245452.png",
+    "caption": "Precision-Recall curve for the Gradient Boosting Classifier (GBC) predicting the thermodynamic stability of ABO\\_3 perovskites. The model was evaluated using a rigorous Leave-One-Cluster-Out (LOCO) cross-validation strategy, grouped by the A-site element. The resulting Area Under the Curve (AUC-PR) of 0.353 demonstrates a substantial performance improvement over the no-skill baseline of 0.131, which corresponds to the 13.1\\% frequency of stable compounds in the dataset. This illustrates the model's ability to effectively enrich a candidate pool with thermodynamically stable materials far beyond random selection."
+  },
+  "image1": {
+    "key": "image1",
+    "name": "step_4_parity_plot_bandgap_1_1776245655.png",
+    "caption": "Performance of the two-stage Hurdle model for electronic band gap prediction on the held-out test set. This parity plot compares the model's predicted band gap against the actual DFT-PBE values. The model's ability to handle the bimodal, zero-inflated nature of the data is evident, with a high concentration of predictions correctly identifying metallic materials (actual band gap = 0 eV). For non-metallic compounds, the predictions are scattered around the line of perfect agreement (red dashed line), and the integrated model achieves a Mean Absolute Error of 0.5225 eV across the entire test set."
+  },
+  "image2": {
+    "key": "image2",
+    "name": "step_6_shap_summary_stability_1_1776245837.png",
+    "caption": "SHAP summary plot for the thermodynamic stability model, illustrating the impact of the most predictive features. The analysis reveals that low structural strain, indicated by low values for Goldschmidt tolerance factor strain (`tau\\_strain`) and octahedral factor strain (`mu\\_strain`), strongly increases the predicted probability of stability (positive SHAP values). Similarly, a high electronegativity difference (`en\\_diff`) and the presence of specific Glazer tilt systems, such as the high-symmetry cubic `glazer\\_tilt\\_a0a0a0`, are key drivers favoring thermodynamic stability."
+  },
+  "image3": {
+    "key": "image3",
+    "name": "step_6_shap_summary_viability_1_1776245837.png",
+    "caption": "SHAP summary plot for the Mechanical Viability Classifier, where features are ranked by importance. Each point represents a material, with its color indicating the feature value (red for high, blue for low) and its x-position showing the impact on the prediction of viability. The plot demonstrates that high density, low log\\_volume, and a more negative formation\\_energy\\_per\\_atom are the strongest predictors of mechanical viability. The A-site ionic radius (A\\_radius) and the presence of a hexagonal crystal structure (crystal\\_Hexagonal) are also identified as significant contributing factors."
+  },
+  "image4": {
+    "key": "image4",
+    "name": "step_6_tradeoff_space_1_1776245837.png",
+    "caption": "Multi-objective optimization trade-off space for 1068 uncharacterized ABO\\_3 perovskite candidates, plotting the predicted thermodynamic stability probability against the mechanical viability score. The viability score is penalized by the predictive uncertainty derived from Gaussian Process Regressor models for the elastic moduli, thereby down-weighting candidates in regions of high model uncertainty. The plot reveals a distinct Pareto front, with the top 20 optimal candidates highlighted (yellow stars), which represent the best compromises between high stability and high, low-uncertainty mechanical robustness."
+  }
+}

@@ -1,0 +1,14 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{graphicx} 
+
+
+\begin{document}
+
+High-throughput discovery of novel ABO$_3$ perovskites is frequently impeded by computational datasets containing sparse and physically unreliable elastic properties. To overcome this challenge, we introduce a two-stage classification pipeline that circumvents direct regression on noisy data by sequentially filtering for thermodynamic stability and mechanical viability. First, a gradient boosting classifier, trained on a dataset of 1283 compounds, predicts thermodynamic stability, employing a rigorous Leave-One-Cluster-Out cross-validation to ensure the model generalizes across diverse chemical families. Second, instead of regressing on flawed elastic moduli, a dedicated classifier trained on a physically-filtered subset of materials distinguishes mechanically viable structures from unstable or unphysical ones with high fidelity. We integrate these models into a multi-objective optimization framework to screen 1068 uncharacterized materials, explicitly penalizing candidates with high predictive uncertainty derived from Gaussian Process Regression to ensure reliability. This integrated approach successfully identifies a Pareto front of 16 promising candidates that optimally balance stability and mechanical robustness. Our methodology shortlists novel materials, including DyVO$_3$ and YCrO$_3$, for targeted computational and experimental validation, demonstrating that a classification-first strategy is a powerful tool for navigating imperfect materials data.
+
+\end{document}
+                

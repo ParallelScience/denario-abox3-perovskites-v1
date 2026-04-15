@@ -1,0 +1,84 @@
+
+###### PROMPT BEGINS ########
+System: You are a scientist
+Human: You are provided with:
+- a report on the results of a project. 
+- a plot from the analysis of the project.
+Your task is to create a caption for the plot that will be placed in the results section of a scientific paper. 
+
+Follow these instructions:
+- Write the caption in LaTeX
+- Describe what the plot is showing and relate it to the context below
+- Use the context below to relate the content of the caption to the results section
+- Do not refer to any section or subsection in the text
+- Try to describe what we learn from the image
+- Write the caption to be as short as possible while keeping its content
+- Do not make up anything. The caption should be a description of the plot based on the context below.
+- The caption must be a single paragraph.
+- When writing the caption, take into account that the underscore symbol needs to be written as \_, otherwise it wont compile in LaTeX.
+- Caption must not include tables.
+- If using percentage symbols, use \% instead of %
+
+Context:
+# Results and Discussion
+
+## 1. Thermodynamic Stability Classification
+
+The first stage of our pipeline focused on predicting the thermodynamic stability of ABO$_3$ perovskites, defined as residing on the convex hull (`is_stable` = True, corresponding to an `energy_above_hull` of 0 eV/atom). Given the inherent class imbalance—only 13.1% (168 out of 1283) of the materials in the dataset are thermodynamically stable—we evaluated the Gradient Boosting Classifier (GBC) using a Leave-One-Cluster-Out (LOCO) cross-validation strategy. Grouping by the A-site element (53 unique groups) ensured that the model's performance reflects its ability to generalize to entirely unseen chemical families. This is a rigorous test for materials discovery that prevents the artificial inflation of metrics often seen in random-split cross-validation.
+
+The LOCO CV yielded an Area Under the Precision-Recall Curve (AUC-PR) of 0.3526 and an F1 Score of 0.3203. While these absolute values might appear modest in a standard machine learning context, they represent a substantial and statistically significant improvement over the no-skill baseline of 0.131 (the positive class frequency). The precision-recall curve demonstrates the model's capacity to enrich the candidate pool with stable perovskites far beyond random selection. The variation in stability across different A-site groups was stark; for instance, groups like Os (100%), Pr (34.8%), Sm (34.6%), and Nd (31.0%) exhibited high stability rates, whereas 21 groups (e.g., Al, Bi, Cr, Fe, V) contained zero stable compounds in the dataset. This chemical heterogeneity underscores the necessity of the LOCO CV approach to prevent data leakage and over-optimistic performance estimates. The model successfully learned the underlying physical rules governing stability rather than merely memorizing specific elemental combinations.
+
+## 2. Robust Mechanical Modeling and Viability Classification
+
+The mechanical property dataset is characterized by extreme sparsity (only 215 out of 1283 materials, or 16.8%, possess computed elastic constants) and the presence of severe unphysical outliers. Initial exploratory data analysis revealed bulk moduli ($K_{VRH}$) exceeding $10^6$ GPa and highly negative shear moduli ($G_{VRH}$), indicative of severe convergence failures or pathological potential energy surfaces in the underlying DFT relaxations. To construct a robust mechanical model, we first applied a physical consistency filter, restricting the training set to materials with $0 < K_{VRH} < 300$ GPa and $G_{VRH} > 0$. This filtering retained 207 mechanically viable samples, discarding 8 unphysical or dynamically unstable configurations.
+
+For continuous property prediction, Gradient Boosting Regressors (GBR) optimized with a Huber loss function—chosen specifically for its robustness to residual outliers in the target variable—achieved excellent goodness-of-fit on the filtered subset, with $R^2$ scores of 0.8960 for $K_{VRH}$ and 0.8874 for $G_{VRH}$. To quantify predictive uncertainty for the 1068 uncharacterized materials, we trained Gaussian Process Regressors (GPR) using a composite kernel consisting of a Constant kernel multiplied by a Matérn kernel ($
+u=1.5$) and a WhiteKernel to account for noise. The GPR models achieved $R^2$ scores of 0.7431 and 0.7066 for $K_{VRH}$ and $G_{VRH}$, respectively. The GPR uncertainty (variance) averaged 935.85 GPa$^2$ for $K_{VRH}$ and 660.29 GPa$^2$ for $G_{VRH}$ across the full dataset. The maximum variances observed (4221.09 GPa$^2$ for $K_{VRH}$ and 2168.96 GPa$^2$ for $G_{VRH}$) highlight regions of the chemical space where the model is highly uncertain, providing a critical metric for penalizing uncertain predictions in the subsequent optimization phase.
+
+Rather than relying solely on continuous regression, which can be brittle when extrapolating into uncharacterized chemical spaces, we framed mechanical robustness as a binary classification task. The Mechanical Viability Classifier was trained to distinguish the 207 physically consistent configurations from the unphysical/unstable ones. Evaluated via 5-fold stratified cross-validation, the classifier demonstrated exceptional performance: an accuracy of 0.9628 ± 0.0315, an F1 score of 0.9805 ± 0.0170, a precision of 0.9762 ± 0.0147, and a recall of 0.9854 ± 0.0293. The ROC-AUC was 0.7330 ± 0.2799, reflecting the difficulty of ranking the minority class (unviable materials) due to its extremely small size (8 samples), but confirming the model's high precision in identifying mechanically sound candidates.
+
+## 3. Electronic Properties: Hurdle Model Performance
+
+To address the bimodal distribution of the electronic band gap—where exactly 48.6% of the dataset exhibits metallic behavior (band gap = 0.0 eV)—we implemented a two-stage Hurdle model. Standard regression models applied to zero-inflated data often predict unphysical negative band gaps or fail to capture the sharp transition between metals and insulators. The first stage, a Gradient Boosting Classifier predicting metallicity (`is_metal`), achieved an accuracy of 0.7938 and a strong ROC-AUC of 0.8848 on the held-out test set (20% of the data, 257 samples). 
+
+The second stage, a Gradient Boosting Regressor trained exclusively on the log1p-transformed non-zero band gaps, yielded a Root Mean Squared Error (RMSE) of 0.2490 on the log scale. When back-transformed to the original eV scale using the `expm1` function, the Mean Absolute Error (MAE) for the non-metallic subset was 0.5315 eV. Integrating both stages—where the final prediction is exactly 0.0 eV if the classifier predicts a metal, and the regressor's output otherwise—the overall Hurdle model achieved an MAE of 0.5225 eV across the entire test set. This two-stage approach effectively circumvents the zero-inflation problem, providing a reliable surrogate for PBE-level band gap predictions. It is important to note that while the model accurately reproduces the DFT-PBE values, these values systematically underestimate true experimental band gaps, and high-performance candidates would require higher-fidelity calculations (e.g., HSE06 or GW) for precise optoelectronic applications.
+
+## 4. Interpretability and Feature Importance (SHAP Analysis)
+
+To elucidate the physical drivers underlying the machine learning predictions, we employed SHapley Additive exPlanations (SHAP) and intrinsic feature importance metrics, providing a transparent view into the models' decision-making processes.
+
+For the **Thermodynamic Stability Model**, the SHAP analysis revealed that structural strain proxies and electronegativity differences are the paramount determinants of stability. The Goldschmidt tolerance factor strain (`tau_strain` = $|	au - 1.0|$) and the octahedral factor strain (`mu_strain` = $|\mu - 0.57|$) emerged as critical features. Materials with low `tau_strain` ($	au$ values close to the ideal 1.0) and low `mu_strain` exhibited significantly higher SHAP values, driving the model toward predicting stability. This aligns perfectly with classical crystallographic theory, where optimal ionic radii ratios minimize lattice strain and favor the perovskite phase over competing polymorphs. Furthermore, the electronegativity difference (`en_diff`) between the B-site and A-site cations played a substantial role; moderate to high electronegativity differences generally favored stability, likely reflecting the necessity of a strong ionic character in the A-O bonds coupled with a more covalent B-O framework. The Glazer tilt systems, derived from the space group symmetries, also contributed significantly. High-symmetry cubic (`a0a0a0`) and specific tilted configurations (e.g., `a-a-a-`, `a+b-b-`) modulated the stability probability, capturing the energy-lowering distortions necessary to accommodate non-ideal ionic radii.
+
+For the **Mechanical Viability Classifier**, the intrinsic feature importances and SHAP values highlighted a different set of physical descriptors. The top features driving mechanical viability were `density` (24.17% importance), `formation_energy_per_atom` (22.86%), `log_volume` (18.87%), and `A_radius` (11.58%). The strong dependence on density and volume indicates that highly porous, uncollapsed structures (large volume, low density) are overwhelmingly classified as mechanically unviable or dynamically unstable. A more negative formation energy (greater thermodynamic stability) strongly correlated with mechanical viability, suggesting a deep physical coupling between the depth of the thermodynamic potential energy well and the curvature of the energy surface (which dictates the elastic moduli). The A-site ionic radius (`A_radius`) and specific crystal systems (e.g., `crystal_Hexagonal` at 8.76% importance) further refined the decision boundary, indicating that certain packing geometries and cation sizes are inherently more resistant to unphysical shear or bulk deformations. The relatively lower importance of $	au$ (1.77%) and $\mu$ (2.15%) in this specific model suggests that while these factors dictate phase stability, the ultimate mechanical robustness of a formed phase is more heavily dependent on its macroscopic density and cohesive energy.
+
+## 5. Pareto-Front Optimization and Candidate Discovery
+
+The ultimate objective of this study was to identify novel, high-performance perovskite candidates from the 1068 uncharacterized materials (those lacking computed elastic constants). To achieve this, we constructed a multi-objective optimization space aiming to maximize both the probability of thermodynamic stability and the mechanical viability score. Crucially, to mitigate the risk of relying on extrapolative machine learning predictions in regions of sparse data, we introduced a penalty constraint based on the GPR predictive uncertainty. The penalized viability score was defined as `viability_prob` $\times$ `(1.0 - gpr_uncertainty_penalty)`, where the penalty is the normalized average variance of the $K_{VRH}$ and $G_{VRH}$ predictions.
+
+Mapping the 1068 uncharacterized candidates into this trade-off space revealed a distinct Pareto front comprising 16 optimal candidates. These materials represent the best available compromises between high thermodynamic stability, high mechanical viability, and low predictive uncertainty.
+
+The top 5 Pareto-optimal candidates, ranked by their combined score (stability probability + penalized viability score), are:
+
+1. **DyVO$_3$ (mp-22789)**: Stability Prob = 0.721, Penalized Viability = 0.799. This orthovanadate exhibits a highly favorable tolerance factor ($	au = 0.852$) and a strong electronegativity difference (0.41). Its high density (7.73 g/cm$^3$) and deeply negative formation energy (-3.30 eV/atom) drive its near-certain mechanical viability (unpenalized prob = 0.9999). The GPR uncertainty penalty is relatively low (0.201), making it a highly reliable candidate.
+2. **YCrO$_3$ (mp-18725)**: Stability Prob = 0.693, Penalized Viability = 0.813. Similar to DyVO$_3$, this chromate features an optimal $	au$ (0.849) and a deeply negative formation energy (-3.19 eV/atom). Its low GPR uncertainty penalty (0.187) reflects the model's high confidence in its mechanical robustness.
+3. **NdRhO$_3$ (mp-4582)**: Stability Prob = 0.639, Penalized Viability = 0.813. With a tolerance factor of 0.888 and a very high density (8.04 g/cm$^3$), this rhodate is predicted to be highly stable and mechanically sound. The large electronegativity difference (1.14) suggests strong ionic bonding, contributing to its robustness.
+4. **SrSiO$_3$ (mp-3978)**: Stability Prob = 0.743, Penalized Viability = 0.688. This silicate presents an interesting case with a tolerance factor > 1 ($	au = 1.081$), indicating a relatively large A-site cation. Despite a higher GPR uncertainty penalty (0.312), its exceptional thermodynamic stability probability makes it a compelling candidate.
+5. **BaSiO$_3$ (mp-776084)**: Stability Prob = 0.744, Penalized Viability = 0.613. Similar to SrSiO$_3$, this compound has a large tolerance factor ($	au = 1.144$). Its high stability probability is offset by a higher uncertainty penalty (0.387), illustrating the trade-off between exploring novel chemical spaces (silicates with large A-sites) and maintaining predictive confidence.
+
+The trade-off space visualization clearly delineates the Pareto front, showing how the penalty function effectively suppresses candidates that might have high nominal viability but reside in regions of high epistemic uncertainty. The top 20 candidates are predominantly composed of rare-earth vanadates, chromates, and rhodates, alongside specific alkaline-earth silicates. These families exhibit the optimal balance of ionic radii (minimizing `tau_strain` and `mu_strain`), deep formation energies, and dense atomic packing required for both thermodynamic and mechanical resilience.
+
+## 6. Synthesis and Conclusion
+
+By decoupling the prediction of mechanical viability from the direct regression of noisy, sparse elastic constants, our two-stage classification pipeline successfully navigated the pathological artifacts inherent in the Materials Project elastic dataset. The integration of LOCO cross-validation ensured that our stability predictions are robust across chemical families, while the GPR-derived uncertainty penalty provided a rigorous physical safeguard against extrapolative failures. The identification of 16 Pareto-optimal candidates, led by DyVO$_3$ and YCrO$_3$, provides a highly targeted, physically vetted shortlist for future high-fidelity DFT calculations and experimental synthesis. This approach demonstrates that framing materials discovery as a constrained, multi-objective classification problem can effectively bypass the limitations of sparse and noisy continuous property datasets, accelerating the identification of viable, high-performance perovskites.
+            
+**Respond in exactly this format**
+
+\\begin{Caption}
+<Caption>
+\\end{Caption}
+
+In <Caption> place the figure caption.
+
+###### PROMPT ENDS ########
+
+content="```latex\n\\begin{Caption}\nPerformance of the two-stage Hurdle model for electronic band gap prediction on the held-out test set. This parity plot compares the model's predicted band gap against the actual DFT-PBE values. The model's ability to handle the bimodal, zero-inflated nature of the data is evident, with a high concentration of predictions correctly identifying metallic materials (actual band gap = 0 eV). For non-metallic compounds, the predictions are scattered around the line of perfect agreement (red dashed line), and the integrated model achieves a Mean Absolute Error of 0.5225 eV across the entire test set.\n\\end{Caption}\n```" additional_kwargs={} response_metadata={'finish_reason': 'STOP', 'model_name': 'gemini-2.5-pro', 'safety_ratings': [], 'model_provider': 'google_genai'} id='lc_run--019d9084-29a6-7e13-aef3-64aa137b042c-0' tool_calls=[] invalid_tool_calls=[] usage_metadata={'input_tokens': 3722, 'output_tokens': 1298, 'total_tokens': 5020, 'input_token_details': {'cache_read': 0}, 'output_token_details': {'reasoning': 1153}}

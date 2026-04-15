@@ -1,0 +1,20 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{graphicx} 
+
+
+\begin{document}
+
+The ABO$_3$ perovskite crystal structure represents a cornerstone of modern materials science, offering a vast compositional landscape for discovering materials with functional properties critical for applications in photovoltaics, catalysis, and electronics. High-throughput computational screening, driven by first-principles calculations, is an essential tool for navigating this expansive chemical space, accelerating the discovery cycle from theoretical prediction to experimental synthesis. However, the efficacy of this data-driven paradigm is fundamentally limited by the quality and completeness of the underlying computational data.
+
+A significant bottleneck in high-throughput workflows arises from the challenge of reliably computing mechanical properties. While thermodynamic stability, often quantified by the energy above the convex hull ($E_{hull}$), is a robust and well-established metric, calculated elastic properties are frequently sparse and plagued by physically unrealistic artifacts. Datasets often contain entries with negative bulk ($K$) or shear ($G$) moduli, which signify structural instabilities that can arise from numerical convergence issues or from performing calculations on dynamically unstable phases. Attempting to train standard regression models on such flawed data is a critical flaw; these models are easily biased by extreme outliers and unphysical values, leading to poor generalization and unreliable predictions for novel materials.
+
+To overcome this challenge, we introduce a two-stage classification pipeline that circumvents the pitfalls of direct regression on noisy elastic data. Our approach reframes the problem by prioritizing qualitative assessment over quantitative prediction for identifying mechanically robust materials. The first stage of our pipeline employs a classifier to predict thermodynamic stability, ensuring that only compounds likely to be synthesizable are passed forward for further consideration. The second, and central, stage addresses mechanical robustness. Instead of attempting to predict the exact values of elastic moduli, a dedicated classifier distinguishes between mechanically viable and unstable structures. This model is trained exclusively on a physically-vetted subset of data, allowing it to learn the structural and chemical features associated with mechanical integrity without being corrupted by the nonsensical data points that undermine regression-based approaches.
+
+We integrate these sequential classifiers into a multi-objective optimization framework to screen a large space of uncharacterized ABO$_3$ compounds, seeking candidates that simultaneously satisfy the criteria for both thermodynamic stability and mechanical robustness. To further enhance the reliability of our screening, we explicitly incorporate model uncertainty derived from a Gaussian Process Regression model, penalizing candidates for which predictions are not confident. This integrated strategy allows us to efficiently map the trade-offs between competing material properties and isolate a Pareto front of novel, high-confidence perovskite candidates. Our work demonstrates that a classification-first strategy provides a powerful and robust framework for materials discovery, particularly when navigating the imperfect and often unreliable datasets characteristic of high-throughput computational science.
+
+\end{document}
+                

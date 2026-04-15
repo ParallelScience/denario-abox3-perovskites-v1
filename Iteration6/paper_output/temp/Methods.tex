@@ -1,0 +1,49 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{graphicx} 
+
+
+\begin{document}
+
+\subsection{Dataset and feature engineering}
+The foundation of this study is a dataset comprising 1283 unique ABO$_3$ perovskite compounds sourced from a high-throughput computational materials database. For each compound, we utilized a set of structural and chemical features derived from its stoichiometry and relaxed crystal structure. Key descriptors included the Goldschmidt tolerance factor ($\tau$) and the octahedral factor ($\mu$), which quantify the geometric compatibility of the constituent ions within the perovskite lattice. To capture the effects of structural strain, we engineered features representing the deviation from ideal geometries, namely $\tau_{strain} = |\tau - 1.0|$ and $\mu_{strain} = |\mu - 0.57|$. Additional features included elemental properties such as ionic radii and electronegativity differences, as well as macroscopic properties like density and formation energy per atom. The crystal volume was log-transformed to mitigate the influence of its skewed distribution. Finally, the space group number of each compound was used to classify it into one of the 23 Glazer tilt systems, providing a categorical representation of the octahedral tilting patterns.
+
+The target properties for our models were thermodynamic stability, mechanical properties, and electronic band gap. Thermodynamic stability was treated as a binary classification label, where a material with an energy above the convex hull ($E_{hull}$) of 0 eV/atom was labeled as stable. Mechanical properties were represented by the Voigt-Reuss-Hill (VRH) averages of the bulk ($K_{VRH}$) and shear ($G_{VRH}$) moduli. The electronic band gap was used as a continuous target variable.
+
+\subsection{Thermodynamic stability model}
+To predict thermodynamic stability, we trained a Gradient Boosting Classifier (GBC). The classification task was framed to distinguish stable compounds ($E_{hull} = 0$ eV/atom) from metastable ones ($E_{hull} > 0$ eV/atom). Given the significant class imbalance in the dataset, where only 13.1\% of the compounds are stable, model evaluation was performed using the Area Under the Precision-Recall Curve (AUC-PR), which is more informative than accuracy or ROC-AUC for imbalanced problems.
+
+To ensure the model's ability to generalize to new chemical families, we employed a rigorous Leave-One-Cluster-Out (LOCO) cross-validation strategy. In this scheme, the data was partitioned into 53 clusters, each containing all compounds with the same A-site element. During each fold of the cross-validation, the model was trained on 52 clusters and validated on the single held-out cluster, thereby testing its performance on entirely unseen chemical compositions.
+
+\subsection{Mechanical property models}
+The raw dataset for mechanical properties was both sparse, with elastic constants available for only 16.8\% of the compounds, and contaminated with unphysical values such as negative or extremely large moduli. To address this, we first applied a physical filter, creating a training subset of 207 materials that satisfied the criteria $0 < K_{VRH} < 300$ GPa and $G_{VRH} > 0$.
+
+Our primary approach to mechanical robustness was to reframe the problem from regression to classification. A Mechanical Viability Classifier, also a GBC model, was trained on the full 215-sample subset to distinguish the 207 physically consistent compounds from the unphysical or unstable ones. This model provides a direct probabilistic score of a material's mechanical viability. Its performance was assessed using 5-fold stratified cross-validation, with metrics including accuracy, F1 score, precision, and recall.
+
+To quantify the uncertainty of predictions for uncharacterized materials, we also trained a Gaussian Process Regressor (GPR) on the 207-sample filtered subset to predict $K_{VRH}$ and $G_{VRH}$. The GPR employed a composite kernel consisting of a Constant kernel multiplied by a Mat\'{e}rn kernel with $\nu=1.5$, summed with a WhiteKernel to account for noise. The primary output from the GPR used in our subsequent analysis was the predictive variance, $\sigma^2$, which serves as a measure of the model's confidence for any given prediction.
+
+\subsection{Electronic property model}
+The distribution of the electronic band gap is bimodal, with 48.6\% of the materials being metals (band gap = 0 eV). To accurately model this zero-inflated distribution, we implemented a two-stage Hurdle model.
+\begin{enumerate}
+    \item \textbf{Metallicity Classifier:} A GBC was trained to solve a binary classification problem: predicting whether a material is a metal (`is\_metal` = True) or not.
+    \item \textbf{Band Gap Regressor:} A Gradient Boosting Regressor (GBR) was trained exclusively on the subset of non-metallic compounds. The target variable for this model was the log-transformed band gap, $\log(1 + \text{band\_gap})$, to handle the right-skewed distribution of non-zero values.
+\end{enumerate}
+The final band gap prediction for a given material was determined by first applying the classifier. If the material was predicted to be a metal, its band gap was set to 0 eV. Otherwise, the regressor was used to predict the log-transformed band gap, which was then converted back to the original scale. The performance of the integrated Hurdle model was evaluated using the Mean Absolute Error (MAE) on a held-out test set.
+
+\subsection{Multi-objective optimization for candidate screening}
+We developed a multi-objective optimization framework to screen the 1068 uncharacterized compounds in our dataset. The goal was to identify novel candidates that simultaneously exhibit high thermodynamic stability and high mechanical robustness, while also ensuring the reliability of the predictions. The two primary objectives for maximization were:
+\begin{enumerate}
+    \item The predicted probability of thermodynamic stability from the LOCO-validated GBC.
+    \item The predicted probability of mechanical viability from the dedicated viability classifier.
+\end{enumerate}
+To explicitly account for model uncertainty, we introduced a penalty term derived from the GPR models. The mechanical viability score was adjusted by a penalty proportional to the model's predictive uncertainty. The penalized viability score for a candidate material $i$ was calculated as:
+\begin{equation}
+    S_{penalized}(i) = P_{viability}(i) \times \left(1 - \frac{\bar{\sigma}^2(i) - \min(\bar{\sigma}^2)}{\max(\bar{\sigma}^2) - \min(\bar{\sigma}^2)}\right)
+\end{equation}
+where $P_{viability}(i)$ is the raw probability from the viability classifier and $\bar{\sigma}^2(i)$ is the average predictive variance from the GPR models for $K_{VRH}$ and $G_{VRH}$ for that material. This formulation penalizes candidates for which the model has low confidence, steering the search towards more reliable regions of the chemical space. By plotting the candidates in the space defined by stability probability and penalized viability, we identified a Pareto front of optimal materials representing the best trade-offs between the competing objectives.
+
+\end{document}
+                

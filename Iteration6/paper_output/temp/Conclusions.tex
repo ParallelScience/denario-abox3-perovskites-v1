@@ -1,0 +1,20 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{graphicx} 
+
+
+\begin{document}
+
+In this work, we addressed a critical bottleneck in the high-throughput computational discovery of ABO$_3$ perovskites: the prevalence of sparse and physically unreliable data for mechanical properties. Standard regression models often fail when trained on such datasets, leading to poor predictions. To overcome this, we developed and validated a two-stage classification pipeline designed to sequentially screen for thermodynamic stability and mechanical robustness.
+
+Our methodology was built upon a dataset of 1283 perovskite compounds. The first stage employed a Gradient Boosting Classifier, validated with a rigorous Leave-One-Cluster-Out cross-validation scheme, to identify thermodynamically stable materials. The second, and central, stage reframed the problem of mechanical property prediction. Instead of regressing on noisy elastic moduli, we trained a dedicated classifier to distinguish mechanically viable structures from unphysical or unstable ones. This classification-first approach avoids the pitfalls of training on flawed data. To ensure the reliability of our screening, we integrated these models into a multi-objective optimization framework that explicitly penalizes candidates with high predictive uncertainty, as quantified by a Gaussian Process Regressor.
+
+Our results demonstrate the efficacy of this strategy. The stability model proved capable of significantly enriching a candidate pool with stable compounds. The mechanical viability classifier achieved high precision, effectively filtering out materials with inconsistent mechanical properties. Interpretability analysis using SHAP confirmed that our models learned physically meaningful principles: thermodynamic stability was primarily driven by low geometric strain, while mechanical viability correlated strongly with high density and negative formation energy. The final multi-objective screening successfully identified a Pareto front of 16 promising candidates that optimally balance stability and mechanical robustness, shortlisting novel materials such as DyVO$_3$ and YCrO$_3$ for further investigation.
+
+We have learned that for materials discovery tasks hampered by imperfect data, a classification-first strategy is a powerful and robust alternative to direct regression. By prioritizing the qualitative identification of viable candidates over the quantitative prediction of flawed target values, our pipeline efficiently navigates a vast chemical space to isolate a small set of high-confidence materials. This work establishes a generalizable framework for accelerating materials discovery in the presence of noisy and incomplete computational datasets.
+
+\end{document}
+                
