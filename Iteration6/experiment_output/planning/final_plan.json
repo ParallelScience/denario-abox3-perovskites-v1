@@ -1,0 +1,83 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Load the dataset and remove columns with zero variance (surface_energy, work_function, A_period, B_period).",
+                "Handle duplicate columns and ensure data types are correct.",
+                "Apply log-transformation to volume and elastic_anisotropy.",
+                "Map spacegroup_number to Glazer tilt systems using a lookup table.",
+                "Compute structural strain proxies: |tau - 1.0| and |mu - 0.57|.",
+                "Save the cleaned dataset to a new CSV file."
+            ],
+            "sub_task": "Data Cleaning and Feature Engineering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a Gradient Boosted Classifier to predict is_stable (binary).",
+                "Use features: structural strain proxies, Glazer tilt systems, tau, mu, and electronegativity differences.",
+                "Implement Leave-One-Cluster-Out (LOCO) cross-validation, grouping exclusively by A_site.",
+                "Print the number of folds and class balance per fold.",
+                "Generate and save a precision-recall curve plot including a no-skill baseline at 0.131.",
+                "Save the model and evaluation metrics (AUC-PR, F1)."
+            ],
+            "sub_task": "Thermodynamic Stability Classification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Filter the 215-sample subset for physically consistent elastic data (0 < K < 300 GPa, G > 0).",
+                "Train a GradientBoostingRegressor with loss='huber' for robust point prediction of K_VRH and G_VRH.",
+                "Train a GaussianProcessRegressor for uncertainty quantification (sigma^2) on the filtered subset.",
+                "Use features: density, crystal_system (one-hot), tau, mu, en_diff, A_radius, B_radius, and formation_energy_per_atom.",
+                "Save the trained models and uncertainty estimates."
+            ],
+            "sub_task": "Robust Mechanical Modeling",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a Bernoulli classifier to predict is_metal (gap = 0).",
+                "Train a GradientBoostingRegressor on log1p-transformed non-zero band gaps.",
+                "Back-transform predictions using expm1.",
+                "Evaluate using RMSE (log scale) and MAE (original eV scale).",
+                "Generate and save a parity plot (predicted vs. actual band gap).",
+                "Save the model components and performance metrics."
+            ],
+            "sub_task": "Hurdle Model for Electronic Properties",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Define binary label: 1 if 0 < K_VRH < 300 GPa AND G_VRH > 0, else 0.",
+                "Train a binary classifier on the 215-sample subset to distinguish between \"physically consistent\" and \"unphysical/unstable\" configurations.",
+                "Use raw features (strain proxies, tilt systems, etc.) to assess mechanical viability.",
+                "Save the classifier and feature importance scores."
+            ],
+            "sub_task": "Mechanical Viability Classification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Apply SHAP to the stability and mechanical models to determine feature importance.",
+                "Construct a multi-objective optimization space maximizing stability probability and mechanical viability score.",
+                "Apply a penalty constraint for high GPR predictive uncertainty.",
+                "Generate a visualization of the trade-off space (stability vs. mechanical robustness).",
+                "Generate and save a ranked table of the top 20 Pareto-optimal candidates (formula, material_id, stability prob, viability score, GPR uncertainty, descriptors)."
+            ],
+            "sub_task": "Interpretability and Pareto-Front Optimization",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Interpret SHAP analysis regarding drivers of stability and mechanical robustness.",
+                "Discuss trade-offs identified in the Pareto-front optimization.",
+                "Report quantitative results: AUC-PR, F1 scores, RMSE/MAE, filter counts, and properties of the top 20 candidates.",
+                "Provide a final synthesis of findings and identification of novel high-performance perovskite candidates.",
+                "Write the full Results section of the report."
+            ],
+            "sub_task": "Results Synthesis and Reporting",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
