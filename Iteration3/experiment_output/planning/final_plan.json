@@ -1,0 +1,68 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Load the dataset and remove columns with no variance (surface_energy, work_function, A_period, B_period) and residual duplicate columns (e.g., A_site.1, B_site.1).",
+                "Define is_stable_soft target (energy_above_hull < 0.05 eV/atom).",
+                "Calculate VEC using fixed valence electron counts (O=6, A/B-site based on standard oxidation states) and volume_residual (DFT volume minus geometric estimate).",
+                "Apply log-transform to volume and elastic_anisotropy.",
+                "Flag radius_ratio for potential removal due to collinearity with tau.",
+                "Save the cleaned and feature-engineered dataset."
+            ],
+            "sub_task": "Data Preprocessing and Feature Engineering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a Gradient Boosted Classifier to predict is_stable_soft using structural/compositional features, explicitly excluding leakage-prone columns (is_stable, energy_above_hull, equilibrium_reaction_energy_per_atom, formation_energy_per_atom).",
+                "Use stratified 5-fold cross-validation and class-weight balancing.",
+                "Report confusion matrix, class distribution, AUC-ROC, and Precision-Recall curves.",
+                "Save model metrics and feature importance."
+            ],
+            "sub_task": "Thermodynamic Stability Classification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Filter the elastic subset (215 samples) to remove unphysical outliers (K_VRH > 300 GPa, G_VRH < 0 or > 200 GPa).",
+                "Train a GPR (using composite RBF + WhiteKernel) on standardized features for K_VRH and G_VRH.",
+                "Report cross-validated R² and RMSE, and the number of samples retained after filtering.",
+                "Save the trained GPR models and uncertainty metrics."
+            ],
+            "sub_task": "Mechanical Property Regression and Uncertainty Quantification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a One-Class SVM on the elastic feature space to define the \"Applicability Domain\".",
+                "Classify the 1068 uncharacterized materials as \"In-Domain\" or \"Out-of-Domain\" and report the exact counts/percentages.",
+                "Implement an acquisition function (Upper Confidence Bound) to rank candidates.",
+                "Save the full ranked candidate list (all 1068 materials) with all relevant property columns.",
+                "Print the top 50 candidates with their full property profiles."
+            ],
+            "sub_task": "Domain-Constrained Prediction and Active Learning",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train an is_metal classifier and a Random Forest regressor for band_gap (non-metallic subset), reporting cross-validated metrics.",
+                "Propagate uncertainty for pugh_ratio using Monte Carlo sampling of GPR posteriors.",
+                "Construct a multi-objective space (Stability, Mechanical Viability, Band Gap) and identify the Pareto-optimal frontier restricted to \"In-Domain\" materials.",
+                "Quantify chemical diversity of Pareto candidates by counting unique A/B-site elements.",
+                "Generate and save all required plots: ROC/PR curves, GPR parity plots, Pareto frontier scatter plot, Applicability Domain PCA projection, and UCB distribution."
+            ],
+            "sub_task": "Electronic Profiling, Multi-Objective Analysis, and Visualization",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Synthesize findings from all models, reporting key quantitative results (AUC-ROC, average precision, cross-validated R², In-Domain percentage, Pareto candidate count).",
+                "Discuss the physical interpretation of tau in stability classification and contextualize GPR uncertainty bounds relative to DFT accuracy.",
+                "Interpret Pareto-optimal candidates, their chemical diversity, and the implications of the \"Applicability Domain\" for future DFT validation.",
+                "Write the full Results section of the report, referencing all generated metrics and plots."
+            ],
+            "sub_task": "Final Reporting and Interpretation",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
