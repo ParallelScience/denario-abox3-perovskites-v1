@@ -1,0 +1,1906 @@
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: You are a Senior Scientific Researcher.
+**Objective**: Based on the provided dataset description and potential previous ideas, generate 10 distinct, high-impact research ideas for a scientific project. 
+
+**Task**: 
+Generate 10 research ideas that could lead to meaningful scientific discovery. These ideas must be diverse in their approach to the data and must be different to previous existing ideas.
+
+**Operational Constraints**:
+- We are trying to sample the ideas space as widely as possible. Thus, if there are existing ideas, make the 10 ideas as different as possible from the existing ones.
+- The 10 ideas should also be as different from each other as possible.
+- **Conciseness**: Each idea should be 3-4 sentences max. Focus on the "Research Question," not the execution.
+- **No Methodology**: Do not include plans, code, or specific algorithms. Only state the *Research Objective*.
+- **Consistency**: The ideas must strictly adhere to the constraints and physical reality described in the data description.
+- **Zero Redundancy**: If two ideas feel similar, discard one and find a new scientific angle.
+- Each idea must consist of a title and a brief description of it.
+
+Data description:
+# ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+
+
+
+
+
+<eda_report>
+# Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.
+</eda_report>
+
+
+Respond in the following format:
+
+\\begin{IDEAS}
+<IDEAS>
+\\end{IDEAS}
+
+In <IDEAS>, put the ideas you have generated. 
+
+###### PROMPT ENDS ########
+
+\begin{IDEAS}
+1. **Title: Topological Classification of Metastable Perovskites**
+Objective: Determine if specific ranges of `energy_above_hull` correlate with the emergence of non-trivial topological electronic states in the non-metallic subset. This research aims to identify if structural metastability can be leveraged as a design parameter for engineering exotic band structures.
+
+2. **Title: Predictive Mapping of Born Stability Criteria**
+Objective: Investigate the relationship between structural symmetry (space group) and the occurrence of negative elastic constants in the dataset. The goal is to define the threshold where lattice distortion transitions from a stable configuration to a dynamically unstable state.
+
+3. **Title: Electronegativity-Driven Magnetic Ordering Trends**
+Objective: Quantify the influence of the `en_diff` (B-site minus A-site electronegativity) on the transition between ferromagnetic and antiferromagnetic ground states. This research seeks to establish a predictive link between chemical bonding character and magnetic exchange interactions in ABO3 systems.
+
+4. **Title: Proxy-Based Mechanical Property Inference**
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+
+5. **Title: The Influence of Octahedral Tilting on Band Gap Anisotropy**
+Objective: Analyze how the octahedral factor (μ) and space group symmetry collectively constrain the direct vs. indirect nature of the band gap. The research objective is to determine if specific octahedral distortion modes serve as reliable geometric switches for optoelectronic tuning.
+
+6. **Title: Decoupling Atomic Density from Thermodynamic Stability**
+Objective: Explore the competition between `density_atomic` and `formation_energy_per_atom` to characterize the "packing efficiency" of metastable perovskites. This study aims to identify if high-density metastable phases possess unique structural pathways that could be accessed via high-pressure synthesis.
+
+7. **Title: Symmetry-Dependent Scaling Laws for Ionization Energy**
+Objective: Examine how the first ionization energy of A-site and B-site elements scales with the unit cell volume across different crystal systems. The objective is to identify fundamental constraints on how charge transfer influences the structural volume of the perovskite unit cell.
+
+8. **Title: Multi-Objective Optimization of Stability and Metallicity**
+Objective: Identify the chemical "sweet spot" in the A-B element space that simultaneously maximizes thermodynamic stability while maintaining metallic behavior. This research aims to define the chemical boundaries for high-conductivity, stable perovskite oxide electrodes.
+
+9. **Title: Elastic Anisotropy as a Descriptor for Structural Phase Transitions**
+Objective: Determine if `elastic_anisotropy` serves as a precursor or signature for materials transitioning between different crystal systems within the ABO3 family. The objective is to evaluate whether mechanical uniformity is a fundamental requirement for the stability of highly symmetric cubic perovskites.
+
+10. **Title: Mapping the Chemical Space of Ferrimagnetic Perovskites**
+Objective: Characterize the specific elemental combinations of A and B sites that stabilize ferrimagnetic order compared to the more common ferromagnetic or non-magnetic states. This objective focuses on isolating the structural and electronic features that favor complex spin-sublattice arrangements.
+\end{IDEAS}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Senior Scientific Lead and Final Decision Maker.
+**Objective**: Review the ideas prioritized by the three independent Reviewer Agents and select the single most promising research project to proceed to the implementation phase.
+
+**Context**: 
+A pool of 10 initial ideas was generated. Three independent agents have evaluated those ideas and identified their top selections (provided below). Your role is to serve as the final filter, selecting the "Best of the Best" based on scientific merit and the constraints of the dataset.
+
+**Evaluation Criteria**:
+1. **Scientific Consensus**: Does an idea appear as a top choice for multiple reviewers?
+2. **Execution Readiness**: Given the 'Data Description,' which idea is most likely to produce a valid, non-erroneous scientific result?
+3. **Strategic Impact**: Which project offers the most meaningful contribution to the Foundation's research goals?
+4. **Novelty vs Previous Work**: The selected idea should be as different as possible from any previous ideas to ensure new scientific contributions.
+
+**Operational Constraints**:
+- **Selection Only**: You must select exactly one idea.
+- **Strict Fidelity**: Do not modify, rephrase, or correct the original text of the idea. 
+- **Zero Commentary**: Do not justify your decision, provide pros/cons, or offer any introductory text.
+- **Output Integrity**: Provide **only** the text of the selected idea within the required tags.
+- The selected idea must contain a title and a description of the idea
+
+Data description:
+# ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+
+Ideas:
+Idea selected1: Title: Proxy-Based Mechanical Property Inference
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+Idea selected2: Title: Proxy-Based Mechanical Property Inference
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+Idea selected3: Title: Proxy-Based Mechanical Property Inference
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+
+
+
+
+
+<eda_report>
+# Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.
+</eda_report>
+
+
+Respond in exactly the following format:
+
+\\begin{IDEA}
+<IDEA>
+\\end{IDEA}
+
+In <IDEA>, put the idea you have selected
+
+###### PROMPT ENDS ########
+
+\begin{IDEA}
+Title: Proxy-Based Mechanical Property Inference
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+\end{IDEA}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Skeptical Red Team Reviewer and Scientific Auditor.
+**Objective**: Conduct a rigorous "Stress Test" on the proposed research idea to identify fatal flaws, feasibility gaps, and potential scientific "slop."
+
+**Evaluation Criteria**:
+1. **Data-Hypothesis Alignment**: Does the dataset described actually contain the variables and precision required to test this idea?
+2. **Feasibility & Noise**: Is the signal-to-noise ratio realistic? Is the idea too ambitious for the provided data?
+3. **Redundancy Check**: Does this idea simply repeat a "standard" analysis, or is it a meaningful contribution?
+4. **Physical Reality**: Does the idea violate any constraints or physical laws mentioned in the data description?
+
+**Task**:
+- Critically analyze the "Current Idea" against the "Data Description."
+- If the idea is **unfeasible**, explicitly state why and suggest a "Strategic Pivot" (a new direction that *is* supported by the data).
+- If the idea is **feasible but weak**, identify the specific "weak links" in the logic.
+- Compare it against "Previous Ideas" to ensure the refinement loop is moving forward, not backward.
+
+**Operational Constraints**:
+- **Tone**: Be professional, objective, and intellectually demanding. 
+- **Brevity**: Use high-density bullet points. Do not waste words on pleasantries.
+- **Strict Adherence**: Every criticism must be grounded in the provided 'Data Description.'
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Current Idea**: Title: Proxy-Based Mechanical Property Inference
+Objective: Develop a latent space model that utilizes thermodynamic and volumetric descriptors to estimate the Voigt–Reuss–Hill bulk modulus for materials lacking direct elastic data. This objective focuses on bypassing the high computational cost of full elastic tensor calculations by identifying structural surrogates.
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>    
+
+Respond in the following format:
+
+\\begin{CRITIC}
+<CRITIC>
+\\end{CRITIC}
+
+In <CRITIC>, put your criticism to the idea. Try to be brief in the description.
+
+###### PROMPT ENDS ########
+
+\begin{CRITIC}
+*   **Data-Hypothesis Alignment**: The proposal is fundamentally undermined by the extreme sparsity (16.8%) and severe data corruption (unphysical outliers/negative moduli) of the elastic target variables. A latent space model trained on 215 noisy points will likely overfit to the artifacts identified in the EDA.
+*   **Feasibility & Noise**: The signal-to-noise ratio is critically low. Using `volume` and `energy_per_atom` as proxies for `K_VRH` is standard but insufficient given that the dataset contains massive supercells (outliers) that will decouple volume from intrinsic bulk modulus.
+*   **Redundancy Check**: This is a "standard" regression task. Without a novel feature engineering strategy (e.g., incorporating the `spacegroup` or `magnetic_ordering` as categorical priors), it risks being a trivial exercise in curve-fitting noise.
+*   **Physical Reality**: The proposal ignores the Born stability criteria. Predicting `K_VRH` for materials that are dynamically unstable (negative shear moduli) is physically incoherent.
+*   **Strategic Pivot**: Shift from "Mechanical Property Inference" to "Mechanical Stability Classification." Use the 215-sample subset to train a classifier that identifies *stable* vs. *unstable* (Born-violating) perovskites based on structural descriptors (`tau`, `mu`, `spacegroup`). This leverages the existing data without being held hostage by the extreme numerical outliers in the elastic constants.
+\end{CRITIC}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Senior Research Scientific.
+**Objective**: Synthesize a primary research idea with expert criticism to produce a refined, groundbreaking, and technically feasible scientific objective.
+
+**Task**:
+You are in an iterative refinement loop (Iteration: 0). Your goal is to take the "Previous Idea," pass it through the filter of the "Critiques," and produce a "Hardened Idea" that is more scientifically rigorous and original than its predecessor.
+
+**Refinement Principles**:
+1. **Address Caveats**: If the critic mentioned a lack of feasibility, adjust the scope of the idea to fit the 'Data Description.'
+2. **Increase Specificity**: Move away from generic goals. Use the statistics and variables found in the data description to make the idea more concrete.
+3. **Internalize Feedback**: Do not explicitly mention the criticism or explain your changes. Instead, weave the solutions directly into the new version of the idea.
+4. **Maintain Grounding**: Ensure the "groundbreaking" aspect remains physically possible within the provided dataset's constraints.
+
+**Operational Constraints**:
+- **Brevity**: Keep the description concise but high-density (max 6 sentences).
+- **Format**: Do not include introductory text or meta-commentary about the process.
+- **Fidelity**: Stick strictly to the guidelines and physical realities described in the data description.
+- The idea must contain a title and a description of the idea
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Critical Feedback**: *   **Data-Hypothesis Alignment**: The proposal is fundamentally undermined by the extreme sparsity (16.8%) and severe data corruption (unphysical outliers/negative moduli) of the elastic target variables. A latent space model trained on 215 noisy points will likely overfit to the artifacts identified in the EDA.
+*   **Feasibility & Noise**: The signal-to-noise ratio is critically low. Using `volume` and `energy_per_atom` as proxies for `K_VRH` is standard but insufficient given that the dataset contains massive supercells (outliers) that will decouple volume from intrinsic bulk modulus.
+*   **Redundancy Check**: This is a "standard" regression task. Without a novel feature engineering strategy (e.g., incorporating the `spacegroup` or `magnetic_ordering` as categorical priors), it risks being a trivial exercise in curve-fitting noise.
+*   **Physical Reality**: The proposal ignores the Born stability criteria. Predicting `K_VRH` for materials that are dynamically unstable (negative shear moduli) is physically incoherent.
+*   **Strategic Pivot**: Shift from "Mechanical Property Inference" to "Mechanical Stability Classification." Use the 215-sample subset to train a classifier that identifies *stable* vs. *unstable* (Born-violating) perovskites based on structural descriptors (`tau`, `mu`, `spacegroup`). This leverages the existing data without being held hostage by the extreme numerical outliers in the elastic constants.
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>
+
+Respond in the following format:
+
+\\begin{IDEA}
+<IDEA>
+\\end{IDEA}
+
+In <IDEA>, put the refined idea. 
+
+###### PROMPT ENDS ########
+
+\begin{IDEA}
+**Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+\end{IDEA}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Skeptical Red Team Reviewer and Scientific Auditor.
+**Objective**: Conduct a rigorous "Stress Test" on the proposed research idea to identify fatal flaws, feasibility gaps, and potential scientific "slop."
+
+**Evaluation Criteria**:
+1. **Data-Hypothesis Alignment**: Does the dataset described actually contain the variables and precision required to test this idea?
+2. **Feasibility & Noise**: Is the signal-to-noise ratio realistic? Is the idea too ambitious for the provided data?
+3. **Redundancy Check**: Does this idea simply repeat a "standard" analysis, or is it a meaningful contribution?
+4. **Physical Reality**: Does the idea violate any constraints or physical laws mentioned in the data description?
+
+**Task**:
+- Critically analyze the "Current Idea" against the "Data Description."
+- If the idea is **unfeasible**, explicitly state why and suggest a "Strategic Pivot" (a new direction that *is* supported by the data).
+- If the idea is **feasible but weak**, identify the specific "weak links" in the logic.
+- Compare it against "Previous Ideas" to ensure the refinement loop is moving forward, not backward.
+
+**Operational Constraints**:
+- **Tone**: Be professional, objective, and intellectually demanding. 
+- **Brevity**: Use high-density bullet points. Do not waste words on pleasantries.
+- **Strict Adherence**: Every criticism must be grounded in the provided 'Data Description.'
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Current Idea**: **Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+- **Previous Versions (for context)**: 
+
+
+Iteration 0:
+Idea: **Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>    
+
+Respond in the following format:
+
+\\begin{CRITIC}
+<CRITIC>
+\\end{CRITIC}
+
+In <CRITIC>, put your criticism to the idea. Try to be brief in the description.
+
+###### PROMPT ENDS ########
+
+\begin{CRITIC}
+*   **Data-Hypothesis Mismatch**: The proposal claims to classify "Born-stable" perovskites, but the dataset contains no explicit "Born stability" labels. The EDA confirms the elastic subset (215/1283) is riddled with unphysical outliers (e.g., negative shear moduli, extreme bulk moduli). Using this noisy, sparse subset as a "ground truth" for the remaining 1068 materials is statistically unsound and lacks a verified physical basis.
+*   **Feasibility Gap**: The "two-stage architecture" is ill-defined. Mapping structural features to a "stable/unstable manifold" is a non-trivial regression/classification task that the current features (Goldschmidt factors, space groups) are insufficient to solve, as they do not capture the electronic/potential energy surface curvature required to determine dynamical stability.
+*   **Redundancy/Slop**: The proposal ignores the `energy_above_hull` and `is_stable` columns, which are the *actual* thermodynamic stability metrics provided in the data. Attempting to derive a new "mechanical stability" classifier from corrupted elastic data is a regression-loop error; it ignores the existing, verified thermodynamic stability labels.
+*   **Strategic Pivot**: Abandon the attempt to classify "Born stability" via sparse elastic constants. Instead, perform a **Thermodynamic Stability Classification** using the full 1283-sample set. Use `is_stable` as the target and employ the structural/elemental descriptors as features. If mechanical properties are required, perform a **Multi-Task Learning** approach that predicts `K_VRH` and `G_VRH` only after rigorous outlier clipping (as defined in the EDA) to ensure the model learns physical trends rather than DFT convergence artifacts.
+\end{CRITIC}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Senior Research Scientific.
+**Objective**: Synthesize a primary research idea with expert criticism to produce a refined, groundbreaking, and technically feasible scientific objective.
+
+**Task**:
+You are in an iterative refinement loop (Iteration: 1). Your goal is to take the "Previous Idea," pass it through the filter of the "Critiques," and produce a "Hardened Idea" that is more scientifically rigorous and original than its predecessor.
+
+**Refinement Principles**:
+1. **Address Caveats**: If the critic mentioned a lack of feasibility, adjust the scope of the idea to fit the 'Data Description.'
+2. **Increase Specificity**: Move away from generic goals. Use the statistics and variables found in the data description to make the idea more concrete.
+3. **Internalize Feedback**: Do not explicitly mention the criticism or explain your changes. Instead, weave the solutions directly into the new version of the idea.
+4. **Maintain Grounding**: Ensure the "groundbreaking" aspect remains physically possible within the provided dataset's constraints.
+
+**Operational Constraints**:
+- **Brevity**: Keep the description concise but high-density (max 6 sentences).
+- **Format**: Do not include introductory text or meta-commentary about the process.
+- **Fidelity**: Stick strictly to the guidelines and physical realities described in the data description.
+- The idea must contain a title and a description of the idea
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Previous Versions**: 
+
+
+Iteration 0:
+Idea: **Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+
+- **Critical Feedback**: *   **Data-Hypothesis Mismatch**: The proposal claims to classify "Born-stable" perovskites, but the dataset contains no explicit "Born stability" labels. The EDA confirms the elastic subset (215/1283) is riddled with unphysical outliers (e.g., negative shear moduli, extreme bulk moduli). Using this noisy, sparse subset as a "ground truth" for the remaining 1068 materials is statistically unsound and lacks a verified physical basis.
+*   **Feasibility Gap**: The "two-stage architecture" is ill-defined. Mapping structural features to a "stable/unstable manifold" is a non-trivial regression/classification task that the current features (Goldschmidt factors, space groups) are insufficient to solve, as they do not capture the electronic/potential energy surface curvature required to determine dynamical stability.
+*   **Redundancy/Slop**: The proposal ignores the `energy_above_hull` and `is_stable` columns, which are the *actual* thermodynamic stability metrics provided in the data. Attempting to derive a new "mechanical stability" classifier from corrupted elastic data is a regression-loop error; it ignores the existing, verified thermodynamic stability labels.
+*   **Strategic Pivot**: Abandon the attempt to classify "Born stability" via sparse elastic constants. Instead, perform a **Thermodynamic Stability Classification** using the full 1283-sample set. Use `is_stable` as the target and employ the structural/elemental descriptors as features. If mechanical properties are required, perform a **Multi-Task Learning** approach that predicts `K_VRH` and `G_VRH` only after rigorous outlier clipping (as defined in the EDA) to ensure the model learns physical trends rather than DFT convergence artifacts.
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>
+
+Respond in the following format:
+
+\\begin{IDEA}
+<IDEA>
+\\end{IDEA}
+
+In <IDEA>, put the refined idea. 
+
+###### PROMPT ENDS ########
+
+\begin{IDEA}
+**Title**: Multi-Task Learning Architecture for Thermodynamic Stability and Elastic Moduli in ABO3 Perovskites
+
+**Description**: This research implements a multi-task learning framework to simultaneously predict thermodynamic stability (`is_stable`) and elastic properties (`K_VRH`, `G_VRH`) across the 1283-compound ABO3 dataset. To overcome data sparsity and unphysical artifacts, the model will utilize a two-stage training pipeline: first, a binary classifier trained on the full set to identify stable phases (`is_stable`), and second, a regressor trained exclusively on a filtered elastic subset (clipping `K_VRH` > 300 GPa and excluding negative moduli) to predict mechanical stiffness. Feature engineering will prioritize Goldschmidt tolerance factors (τ), octahedral factors (μ), and electronegativity differences, while applying log-transformations to `volume` and `elastic_anisotropy` to normalize the distribution. By leveraging shared latent representations between thermodynamic and mechanical features, the model will improve predictive accuracy for the 1068 uncharacterized materials. This approach effectively bypasses the noise in high-energy metastable states and provides a rigorous, physically constrained framework for identifying mechanically robust perovskite candidates.
+\end{IDEA}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Skeptical Red Team Reviewer and Scientific Auditor.
+**Objective**: Conduct a rigorous "Stress Test" on the proposed research idea to identify fatal flaws, feasibility gaps, and potential scientific "slop."
+
+**Evaluation Criteria**:
+1. **Data-Hypothesis Alignment**: Does the dataset described actually contain the variables and precision required to test this idea?
+2. **Feasibility & Noise**: Is the signal-to-noise ratio realistic? Is the idea too ambitious for the provided data?
+3. **Redundancy Check**: Does this idea simply repeat a "standard" analysis, or is it a meaningful contribution?
+4. **Physical Reality**: Does the idea violate any constraints or physical laws mentioned in the data description?
+
+**Task**:
+- Critically analyze the "Current Idea" against the "Data Description."
+- If the idea is **unfeasible**, explicitly state why and suggest a "Strategic Pivot" (a new direction that *is* supported by the data).
+- If the idea is **feasible but weak**, identify the specific "weak links" in the logic.
+- Compare it against "Previous Ideas" to ensure the refinement loop is moving forward, not backward.
+
+**Operational Constraints**:
+- **Tone**: Be professional, objective, and intellectually demanding. 
+- **Brevity**: Use high-density bullet points. Do not waste words on pleasantries.
+- **Strict Adherence**: Every criticism must be grounded in the provided 'Data Description.'
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Current Idea**: **Title**: Multi-Task Learning Architecture for Thermodynamic Stability and Elastic Moduli in ABO3 Perovskites
+
+**Description**: This research implements a multi-task learning framework to simultaneously predict thermodynamic stability (`is_stable`) and elastic properties (`K_VRH`, `G_VRH`) across the 1283-compound ABO3 dataset. To overcome data sparsity and unphysical artifacts, the model will utilize a two-stage training pipeline: first, a binary classifier trained on the full set to identify stable phases (`is_stable`), and second, a regressor trained exclusively on a filtered elastic subset (clipping `K_VRH` > 300 GPa and excluding negative moduli) to predict mechanical stiffness. Feature engineering will prioritize Goldschmidt tolerance factors (τ), octahedral factors (μ), and electronegativity differences, while applying log-transformations to `volume` and `elastic_anisotropy` to normalize the distribution. By leveraging shared latent representations between thermodynamic and mechanical features, the model will improve predictive accuracy for the 1068 uncharacterized materials. This approach effectively bypasses the noise in high-energy metastable states and provides a rigorous, physically constrained framework for identifying mechanically robust perovskite candidates.
+- **Previous Versions (for context)**: 
+
+
+
+Iteration 0:
+Idea: **Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+
+
+Iteration 1:
+Idea: **Title**: Multi-Task Learning Architecture for Thermodynamic Stability and Elastic Moduli in ABO3 Perovskites
+
+**Description**: This research implements a multi-task learning framework to simultaneously predict thermodynamic stability (`is_stable`) and elastic properties (`K_VRH`, `G_VRH`) across the 1283-compound ABO3 dataset. To overcome data sparsity and unphysical artifacts, the model will utilize a two-stage training pipeline: first, a binary classifier trained on the full set to identify stable phases (`is_stable`), and second, a regressor trained exclusively on a filtered elastic subset (clipping `K_VRH` > 300 GPa and excluding negative moduli) to predict mechanical stiffness. Feature engineering will prioritize Goldschmidt tolerance factors (τ), octahedral factors (μ), and electronegativity differences, while applying log-transformations to `volume` and `elastic_anisotropy` to normalize the distribution. By leveraging shared latent representations between thermodynamic and mechanical features, the model will improve predictive accuracy for the 1068 uncharacterized materials. This approach effectively bypasses the noise in high-energy metastable states and provides a rigorous, physically constrained framework for identifying mechanically robust perovskite candidates.
+
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>    
+
+Respond in the following format:
+
+\\begin{CRITIC}
+<CRITIC>
+\\end{CRITIC}
+
+In <CRITIC>, put your criticism to the idea. Try to be brief in the description.
+
+###### PROMPT ENDS ########
+
+\begin{CRITIC}
+*   **Data-Hypothesis Alignment**: The proposal to predict `K_VRH` and `G_VRH` using a multi-task framework is fundamentally undermined by the 83% sparsity of the elastic dataset. Training a regressor on a subset of only ~215 samples (after filtering outliers) is highly prone to overfitting and lacks the statistical power to generalize to the 1068 uncharacterized materials.
+*   **Feasibility & Noise**: The "clipping" strategy is scientifically arbitrary. Clipping `K_VRH` > 300 GPa ignores the high-stiffness regime of legitimate perovskites, while the inclusion of negative moduli (indicative of dynamical instability) in a regression target is physically incoherent.
+*   **Redundancy Check**: This is a refinement of Iteration 1, but it fails to address the "hurdle" nature of the data. Predicting `is_stable` (binary) and `K_VRH` (continuous) simultaneously via shared latent representations assumes a strong correlation between thermodynamic stability and mechanical stiffness that is not supported by the provided EDA.
+*   **Physical Reality**: The model ignores the "Born stability" criteria. Predicting elastic moduli for materials that are dynamically unstable (negative moduli) is a mathematical exercise that produces physically meaningless results.
+*   **Strategic Pivot**: Abandon the multi-task regression for elastic properties. Instead, implement a **two-stage classification pipeline**: 
+    1.  **Stability Classifier**: Predict `is_stable` using the full 1283-sample set.
+    2.  **Mechanical Viability Classifier**: Rather than regressing `K_VRH`, classify materials into "Mechanically Robust" (positive moduli, within physical bounds) vs. "Dynamically Unstable" (negative/pathological moduli) using the 215-sample subset. Use the 1068 uncharacterized materials only for inference, not as a target for regression.
+\end{CRITIC}
+
+
+###### PROMPT BEGINS ########
+Human: 
+**Role**: Senior Research Scientific.
+**Objective**: Synthesize a primary research idea with expert criticism to produce a refined, groundbreaking, and technically feasible scientific objective.
+
+**Task**:
+You are in an iterative refinement loop (Iteration: 2). Your goal is to take the "Previous Idea," pass it through the filter of the "Critiques," and produce a "Hardened Idea" that is more scientifically rigorous and original than its predecessor.
+
+**Refinement Principles**:
+1. **Address Caveats**: If the critic mentioned a lack of feasibility, adjust the scope of the idea to fit the 'Data Description.'
+2. **Increase Specificity**: Move away from generic goals. Use the statistics and variables found in the data description to make the idea more concrete.
+3. **Internalize Feedback**: Do not explicitly mention the criticism or explain your changes. Instead, weave the solutions directly into the new version of the idea.
+4. **Maintain Grounding**: Ensure the "groundbreaking" aspect remains physically possible within the provided dataset's constraints.
+
+**Operational Constraints**:
+- **Brevity**: Keep the description concise but high-density (max 6 sentences).
+- **Format**: Do not include introductory text or meta-commentary about the process.
+- **Fidelity**: Stick strictly to the guidelines and physical realities described in the data description.
+- The idea must contain a title and a description of the idea
+
+**Input Data**:
+- **Data Description**: # ABO3 Perovskite Dataset — Materials Project
+
+## Overview
+
+This dataset contains **1283 stoichiometrically-verified ABO3 perovskite compounds** downloaded from the Materials Project database (https://materialsproject.org) via the `/materials/summary` API endpoint. The data was retrieved by querying all A–B–O chemical systems where A ∈ {Li, Na, K, Rb, Cs, Mg, Ca, Sr, Ba, Sc, Y, La, Ce, Pr, Nd, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, Sb} and B ∈ {Ti, Zr, Hf, V, Nb, Ta, Cr, Mo, W, Mn, Tc, Re, Fe, Ru, Os, Co, Rh, Ir, Ni, Pd, Pt, Cu, Zn, Al, Ga, In, Sn, Ge, Si, P, As, Sb}.
+
+Each entry represents a distinct Materials Project document identified by a unique `material_id`. The dataset contains **574 unique ABO3 formulas** across 7 crystal systems, with full coverage of thermodynamic, electronic, and magnetic properties.
+
+---
+
+## File Inventory
+
+| File | Description |
+|------|-------------|
+| `/home/node/work/projects/materials_project_v3/perovskite_data.csv` | Main dataset — 1283 rows × 75 columns |
+
+### CSV Column Inventory
+
+**Identifiers**
+- `material_id` (str): Materials Project unique ID (e.g., "mp-12345")
+- `formula` (str): Chemical formula in standard format (e.g., "SrTiO3")
+- `theoretical` (bool): True if computationally predicted, False if experimental
+- `chemsys` (str): Chemical system string (e.g., "Sr-Ti-O")
+
+**Structural**
+- `nelements` (int): Number of elements in the formula (=3 for ABO3)
+- `nsites` (int): Total number of atomic sites in the unit cell
+- `volume` (float): Unit cell volume in Å³
+- `density` (float): Mass density in g/cm³
+- `density_atomic` (float): Atomic density in atoms/Å³
+- `energy_per_atom` (float): Total energy per atom in eV/atom
+
+**Symmetry**
+- `spacegroup_symbol` (str): Space group symbol (e.g., "Pm-3m")
+- `spacegroup_number` (int): Space group number (1–230)
+- `crystal_system` (str): One of {Cubic, Hexagonal, Monoclinic, Orthorhombic, Tetragonal, Trigonal, Triclinic}
+
+**Thermodynamic**
+- `formation_energy_per_atom` (float): DFT formation energy in eV/atom (relative to elemental reference states)
+- `energy_above_hull` (float): Energy above the convex hull in eV/atom (>0 = metastable, 0 = stable)
+- `equilibrium_reaction_energy_per_atom` (float): Reaction energy from the most stable decomposition pathway in eV/atom
+- `is_stable` (bool): True if energy_above_hull = 0 (on the convex hull)
+
+**Electronic**
+- `band_gap` (float): DFT PBE band gap in eV
+- `is_gap_direct` (bool): True if the band gap is direct
+- `is_metal` (bool): True if the material is metallic (band_gap = 0)
+- `efermi` (float): Fermi level position in eV (relative to vacuum)
+
+**Magnetic**
+- `is_magnetic` (bool): True if the calculation included spin polarization
+- `magnetic_ordering` (str): Magnetic ground state — one of {NM (non-magnetic), FM (ferromagnetic), AFM (antiferromagnetic), FiM (ferrimagnetic)}
+- `total_magnetization` (float): Total magnetic moment in μ_B per formula unit
+- `total_magnetization_per_fu` (float): Magnetic moment per formula unit (normalized)
+- `num_magnetic_sites` (int): Number of magnetic atomic sites in the structure
+
+**Elastic (VRH averages)**
+- `K_VRH` (float): Voigt–Reuss–Hill bulk modulus in GPa
+- `K_voigt` (float): Voigt bulk modulus in GPa
+- `K_reuss` (float): Reuss bulk modulus in GPa
+- `G_VRH` (float): Voigt–Reuss–Hill shear modulus in GPa
+- `G_voigt` (float): Voigt shear modulus in GPa
+- `G_reuss` (float): Reuss shear modulus in GPa
+- `elastic_anisotropy` (float): Universal elastic anisotropy index (0 = isotropic)
+- `poisson_ratio` (float): Homogeneous Poisson ratio
+- `pugh_ratio` (float): G_VRH / K_VRH ratio — measures shear rigidity relative to bulk incompressibility
+
+**Surface**
+- `surface_energy` (float): Weighted surface energy in J/m²
+- `work_function` (float): Weighted work function in eV
+
+**Elemental A-site descriptors (derived from composition)**
+- `A_site` (str): A-site element symbol
+- `A_Z` (int): Atomic number of A-site element
+- `A_radius` (float): Atomic radius of A-site element in Å
+- `A_en` (float): Pauling electronegativity of A-site element
+- `A_ie1` (float): First ionization energy of A-site element in eV
+- `A_group` (int): Periodic table group number of A-site element
+- `A_period` (float): Period of A-site element (null for all entries — not available in pymatgen Element API)
+
+**Elemental B-site descriptors (derived from composition)**
+- `B_site` (str): B-site element symbol
+- `B_Z` (int): Atomic number of B-site element
+- `B_radius` (float): Atomic radius of B-site element in Å
+- `B_en` (float): Pauling electronegativity of B-site element
+- `B_ie1` (float): First ionization energy of B-site element in eV
+- `B_group` (int): Periodic table group number of B-site element
+- `B_period` (float): Period of B-site element (null for all entries)
+- `B_valence` (int): Maximum common oxidation state of B-site element
+
+**Perovskite structural descriptors (derived from radii)**
+- `tau` (float): Goldschmidt tolerance factor = (r_A + r_O) / [√2 × (r_B + r_O)]
+  - tau ≈ 1.0 is ideal; 0.8–1.0 typically permits stable perovskite
+- `mu` (float): Octahedral factor = r_B / r_O
+  - mu ≈ 0.41–0.73 for stable octahedral tilting
+- `radius_ratio` (float): r_A / r_B ratio
+- `en_diff` (float): B-site minus A-site electronegativity difference
+
+---
+
+## Data Generating Process
+
+The data was retrieved from the Materials Project REST API (`/materials/summary` endpoint) using the `mp-api` Python client (v0.46.0). For each A–B–O chemical system in the defined element lists, all materials containing exactly those three elements were queried. Each returned document represents a DFT-optimized crystal structure with computed properties from the Materials Project 2024.1 dataset.
+
+Stoichiometry was verified post-download: only formulas with exactly 1 A-site atom, 1 B-site atom, and 3 oxygen atoms per formula unit were retained. Duplicates (multiple DFT relaxations of the same composition) were removed by `material_id`.
+
+---
+
+## Known Properties and Caveats
+
+- **Elastic data sparsity**: Only 215/1283 materials (17%) have computed elastic constants. This is the primary gap — most perovskites in the database lack mechanical property data.
+- **DFT accuracy**: Band gaps from PBE functional are systematically underestimated; formation energies have typical errors of ±50 meV/atom.
+- **Metastability**: 1125/1283 materials have energy_above_hull > 0, indicating metastable or unstable phases relative to the convex hull. This is not an error — it reflects the breadth of computed perovskite configurations.
+- **Theoretical vs. experimental**: All entries are from DFT calculations; no experimental property measurements are included.
+- **Pugh ratio nulls**: pugh_ratio = NaN wherever K_VRH is null (215 non-null entries).
+- **A_period / B_period**: Period attribute is not available in the current pymatgen Element API — these columns are null for all entries.
+
+---
+
+## Suggested Analyses
+
+The dataset supports a range of research directions including but not limited to:
+
+- Prediction of elastic/mechanical properties for the 1068 materials without K_VRH or G_VRH
+- Stability classification (stable vs. metastable) based on chemical and structural features
+- Band gap prediction or optoelectronic property mapping across the perovskite space
+- Magnetic ground state prediction from composition and structure
+- Machine learning surrogate models for DFT-computed property surfaces
+- Exploration of composition–structure–property relationships in ABO3 perovskites
+
+The dataset is intentionally described without prioritizing any specific direction.
+- **Previous Versions**: 
+
+
+
+Iteration 0:
+Idea: **Title**: Predictive Classification of Born-Stable Perovskites via Multimodal Structural Descriptors
+
+**Description**: This research aims to develop a robust binary classifier to distinguish between Born-stable and dynamically unstable ABO3 perovskites, bypassing the numerical instability inherent in sparse, high-variance elastic constant datasets. By filtering the 215-sample elastic subset to exclude unphysical outliers—specifically those violating Born stability criteria or exhibiting extreme bulk moduli—we will construct a clean "stability ground truth." The model will integrate geometric features, including the Goldschmidt tolerance factor (τ), octahedral factor (μ), and crystallographic symmetry (space group), alongside categorical magnetic orderings as priors. This approach moves beyond simple regression to identify the structural and chemical boundaries that define mechanical viability. By employing a two-stage architecture that maps the high-dimensional structural space to a stable/unstable manifold, we effectively mitigate the skewness of the thermodynamic landscape and provide a reliable predictive tool for identifying viable materials from the 1068 currently uncharacterized perovskite candidates.
+
+
+Iteration 1:
+Idea: **Title**: Multi-Task Learning Architecture for Thermodynamic Stability and Elastic Moduli in ABO3 Perovskites
+
+**Description**: This research implements a multi-task learning framework to simultaneously predict thermodynamic stability (`is_stable`) and elastic properties (`K_VRH`, `G_VRH`) across the 1283-compound ABO3 dataset. To overcome data sparsity and unphysical artifacts, the model will utilize a two-stage training pipeline: first, a binary classifier trained on the full set to identify stable phases (`is_stable`), and second, a regressor trained exclusively on a filtered elastic subset (clipping `K_VRH` > 300 GPa and excluding negative moduli) to predict mechanical stiffness. Feature engineering will prioritize Goldschmidt tolerance factors (τ), octahedral factors (μ), and electronegativity differences, while applying log-transformations to `volume` and `elastic_anisotropy` to normalize the distribution. By leveraging shared latent representations between thermodynamic and mechanical features, the model will improve predictive accuracy for the 1068 uncharacterized materials. This approach effectively bypasses the noise in high-energy metastable states and provides a rigorous, physically constrained framework for identifying mechanically robust perovskite candidates.
+
+- **Critical Feedback**: *   **Data-Hypothesis Alignment**: The proposal to predict `K_VRH` and `G_VRH` using a multi-task framework is fundamentally undermined by the 83% sparsity of the elastic dataset. Training a regressor on a subset of only ~215 samples (after filtering outliers) is highly prone to overfitting and lacks the statistical power to generalize to the 1068 uncharacterized materials.
+*   **Feasibility & Noise**: The "clipping" strategy is scientifically arbitrary. Clipping `K_VRH` > 300 GPa ignores the high-stiffness regime of legitimate perovskites, while the inclusion of negative moduli (indicative of dynamical instability) in a regression target is physically incoherent.
+*   **Redundancy Check**: This is a refinement of Iteration 1, but it fails to address the "hurdle" nature of the data. Predicting `is_stable` (binary) and `K_VRH` (continuous) simultaneously via shared latent representations assumes a strong correlation between thermodynamic stability and mechanical stiffness that is not supported by the provided EDA.
+*   **Physical Reality**: The model ignores the "Born stability" criteria. Predicting elastic moduli for materials that are dynamically unstable (negative moduli) is a mathematical exercise that produces physically meaningless results.
+*   **Strategic Pivot**: Abandon the multi-task regression for elastic properties. Instead, implement a **two-stage classification pipeline**: 
+    1.  **Stability Classifier**: Predict `is_stable` using the full 1283-sample set.
+    2.  **Mechanical Viability Classifier**: Rather than regressing `K_VRH`, classify materials into "Mechanically Robust" (positive moduli, within physical bounds) vs. "Dynamically Unstable" (negative/pathological moduli) using the 215-sample subset. Use the 1068 uncharacterized materials only for inference, not as a target for regression.
+- **EDA Report**: <eda_report># Exploratory Data Analysis Synthesis: ABO3 Perovskite Dataset
+
+## 1. Data Health, Integrity, and Completeness
+
+An initial assessment of the dataset's structural integrity revealed several critical data quality artifacts that must be addressed prior to downstream modeling. The raw dataset contained duplicated elemental descriptor columns (e.g., `A_site.1`, `B_site.1`), which the engineering agent successfully identified and dropped to ensure a clean feature space. 
+
+The completeness of the dataset varies significantly across property domains:
+
+| Feature Group | Representative Columns | Completeness | Notes |
+| :--- | :--- | :--- | :--- |
+| **Structural & Identifiers** | `volume`, `density`, `spacegroup_symbol` | 100% (1283/1283) | No missing values; `nelements` strictly verified as 3. |
+| **Electronic & Magnetic** | `band_gap`, `is_metal`, `magnetic_ordering` | 100% (1283/1283) | No missing values. |
+| **Thermodynamic** | `formation_energy_per_atom`, `energy_above_hull` | 100% (1283/1283) | `equilibrium_reaction_energy_per_atom` is only populated for the 168 stable materials (13.1%). |
+| **Elastic (VRH)** | `K_VRH`, `G_VRH`, `elastic_anisotropy` | 16.8% (215/1283) | Highly sparse; contains severe unphysical outliers. |
+| **Surface Properties** | `surface_energy`, `work_function` | 0% (0/1283) | Completely absent from the dataset. |
+| **Elemental Descriptors** | `A_radius`, `tau`, `mu`, `en_diff` | 100% (1283/1283) | `A_period` and `B_period` are completely null. |
+
+**Integrity Note:** There are no infinite values or duplicate `material_id` entries. However, the 100% missing columns (`surface_energy`, `work_function`, `A_period`, `B_period`) provide zero variance and must be excluded from all subsequent analyses.
+
+## 2. Quantitative Synthesis and Property Distributions
+
+### Electronic and Magnetic Landscape
+The dataset exhibits a near-even split between metallic and non-metallic behavior, with 48.6% of the compounds classified as metals (`band_gap` = 0.0 eV). For the semiconducting/insulating fraction, the band gap distribution is broad, reaching a maximum of 6.09 eV, with a median of 0.06 eV across the entire dataset. Magnetically, 50.9% of the materials are spin-polarized. The dominant magnetic ground states are Non-Magnetic (49.1%) and Ferromagnetic (43.6%), while Ferrimagnetic (4.4%) and Antiferromagnetic (3.0%) orderings are rare.
+
+### Structural and Thermodynamic Properties
+Crystallographically, the dataset is dominated by high-symmetry systems: Cubic (33.4%) and Orthorhombic (29.9%) structures make up the majority, predominantly mapping to the `Pm-3m` (32.0%) and `Pnma` (20.3%) space groups. 
+
+Thermodynamically, only 13.1% of the materials reside on the convex hull (`is_stable` = True). The `energy_above_hull` distribution is heavily right-skewed. While the 75th percentile is a reasonable 0.24 eV/atom, the distribution exhibits a long tail extending up to 4.16 eV/atom, with 125 statistical outliers identified via the IQR method. 
+
+### Tolerance Factor (τ) and Structural Descriptors
+The Goldschmidt tolerance factor (τ) has a mean of 0.856 and an interquartile range of [0.780, 0.921], aligning well with the theoretical stability window for perovskites. Correlation analysis reveals that τ is almost perfectly collinear with the `radius_ratio` (rA / rB, Pearson r = 0.998) and highly correlated with `A_radius` (r = 0.886). The octahedral factor (μ) shows a high outlier frequency (17.2% of the data), suggesting significant distortions in the B-O coordination polyhedra for a subset of the compounds.
+
+## 3. Anomalies and Outlier Detection
+
+The most critical finding of the EDA is the presence of extreme, unphysical outliers within the sparse elastic property subset (215 entries). 
+- **Bulk Modulus (`K_VRH`)**: The compound `BaRuO3` (mp-3597) reports a `K_VRH` of ~1.44 × 10⁶ GPa, which is physically impossible (orders of magnitude stiffer than diamond). 
+- **Shear Modulus (`G_VRH`)**: `BaRuO3` similarly reports a `G_VRH` of ~1.91 × 10⁵ GPa. Furthermore, several materials exhibit highly negative shear moduli, including `ZrOsO3` (-206.3 GPa), `YOsO3` (-105.2 GPa), `BiRhO3` (-79.5 GPa), and `NaNbO3` (-58.6 GPa). While slightly negative elastic constants can indicate dynamical instability (Born criteria violation) in DFT relaxations, these extreme magnitudes suggest severe convergence failures or pathological potential energy surfaces.
+
+These outliers artificially dominate the variance of the elastic features and spuriously inflate the Pearson correlation between `K_VRH` and `G_VRH` to 0.999995. 
+
+Additionally, the `volume` feature contains 88 upper-bound outliers, with a maximum of 4158 Å³ compared to a median of 179 Å³, indicating the presence of massive supercells or highly porous, uncollapsed structures.
+
+## 4. Modeling Implications and Recommendations
+
+Based on the statistical landscape, the following data treatments are strictly recommended for downstream machine learning and statistical modeling:
+
+1. **Feature Pruning**: Immediately drop `surface_energy`, `work_function`, `A_period`, and `B_period`. Ensure any residual `.1` duplicate columns are removed.
+2. **Elastic Outlier Clipping**: For any mechanical property prediction tasks, the extreme outliers in `K_VRH` (> 300 GPa) and `G_VRH` (> 200 GPa or < -20 GPa) must be explicitly filtered out. Failure to do so will catastrophically bias regression loss functions (e.g., MSE).
+3. **Log-Transformations**: Due to orders-of-magnitude variance and heavy right-skewness, `volume` and `elastic_anisotropy` require log-transformation (log(1 + x)) prior to being used as features or targets in linear models or distance-based algorithms.
+4. **Thermodynamic Target Engineering**: The heavy tail in `energy_above_hull` (> 0.58 eV/atom) likely contains unphysical or highly unrelaxed structures. If predicting stability, consider framing it as a classification task (`is_stable`), or apply a clipping threshold (e.g., 95th percentile) to the continuous target to prevent the model from over-optimizing for extreme metastable states.
+5. **Optoelectronic Modeling Strategy**: Because exactly 48.6% of the dataset has a `band_gap` of 0.0 eV, standard regression models will struggle. A two-stage "hurdle" model is recommended: first, a classifier to predict metallicity (`is_metal`), followed by a regressor trained exclusively on the non-zero subset to predict the continuous band gap magnitude.
+6. **Multicollinearity Mitigation**: Given the near-perfect correlation between τ and `radius_ratio`, models sensitive to multicollinearity (e.g., unregularized linear regression) should drop one of these features to maintain coefficient stability.</eda_report>
+
+Respond in the following format:
+
+\\begin{IDEA}
+<IDEA>
+\\end{IDEA}
+
+In <IDEA>, put the refined idea. 
+
+###### PROMPT ENDS ########
+
+\begin{IDEA}
+**Title**: Two-Stage Classification Pipeline for Mechanical Robustness and Thermodynamic Stability in ABO3 Perovskites
+
+**Description**: This research implements a sequential classification architecture to identify high-performance perovskites, bypassing the unphysical noise and extreme sparsity inherent in the 215-sample elastic dataset. The first stage employs a gradient-boosted classifier to predict thermodynamic stability (`is_stable`) across the full 1283-compound set, using structural descriptors (τ, μ, `volume`) and electronegativity differences as primary features. The second stage utilizes a "Mechanical Viability" classifier trained exclusively on physically bounded elastic data—defined by 0 < `K_VRH` < 300 GPa and positive `G_VRH`—to distinguish between mechanically robust phases and dynamically unstable configurations. By treating mechanical viability as a binary classification problem rather than a regression task, the model avoids the catastrophic bias of extreme outliers and negative moduli. This pipeline provides a rigorous filtering mechanism to isolate stable, mechanically sound candidates from the 1068 currently uncharacterized perovskite entries, effectively mapping the viable material space without relying on unreliable numerical predictions for non-existent or unstable phases.
+\end{IDEA}
+
