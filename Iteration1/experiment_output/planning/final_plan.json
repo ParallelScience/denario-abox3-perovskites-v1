@@ -1,0 +1,96 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Remove columns: `surface_energy`, `work_function`, `A_period`, `B_period`, `theoretical`, and any duplicate columns.",
+                "Set `material_id` as the index.",
+                "Apply log-transformation to `volume` and `elastic_anisotropy`.",
+                "Engineer features: `abs_tau_diff` = `abs(tau - 1.0)`, `radius_diff` = `A_radius - B_radius`, and `ie_ratio` = `A_ie1 / B_ie1`.",
+                "Drop `radius_ratio` to mitigate multicollinearity.",
+                "Create a boolean column `is_elastic_characterized` to distinguish the 215-sample subset.",
+                "Print summary statistics (shape, missing values, distributions) before and after cleaning.",
+                "Print the count of rows in the full dataset (1283) vs. the elastic subset (215).",
+                "Save the cleaned dataset to a CSV file."
+            ],
+            "sub_task": "Data Cleaning and Feature Engineering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Define the target as `log1p(energy_above_hull)`.",
+                "Use only compositional/structural features (e.g., `A_Z`, `B_Z`, `A_radius`, `B_radius`, `A_en`, `B_en`, `tau`, `mu`, `abs_tau_diff`, `radius_diff`, `ie_ratio`, `log_volume`), explicitly excluding DFT-derived properties.",
+                "Train a Gradient Boosted Regressor to predict the transformed stability target.",
+                "Perform cross-validation and print performance metrics.",
+                "Print feature importances and save a feature importance bar chart.",
+                "Save the trained model."
+            ],
+            "sub_task": "Thermodynamic Stability Modeling",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Use the same leakage-free feature set as Step 2.",
+                "Implement a two-stage hurdle model: a classifier for `is_metal` and a regressor for `band_gap` on the non-metallic subset.",
+                "Print classification metrics (accuracy, F1, ROC-AUC) and regression metrics (MAE, RMSE, R²).",
+                "Generate and save a figure with two subplots: confusion matrix for the classifier and predicted-vs-actual scatter plot for the regressor.",
+                "Save the trained models."
+            ],
+            "sub_task": "Optoelectronic Hurdle Modeling",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Filter the 215-sample elastic subset: 0 < `K_VRH` < 300 GPa and 0 < `G_VRH` < 200 GPa.",
+                "Print the number of samples retained after filtering.",
+                "Train Quantile Regression Forests to predict `K_VRH` and `G_VRH` (5th and 95th percentiles), including predicted `is_metal` and `band_gap` as features.",
+                "Report median prediction interval widths for both moduli.",
+                "Generate and save a plot showing predicted median vs. actual values with 90% confidence interval bands.",
+                "Save the trained models and prediction results."
+            ],
+            "sub_task": "Mechanical Property Prediction with Quantile Regression",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Calculate `pugh_ratio` for the 215-sample subset.",
+                "Print class distribution (Ductile vs. Brittle) before training.",
+                "Train a classifier to categorize materials into \"Ductile\" (Pugh < 0.57) or \"Brittle\" (Pugh > 0.57) using the leakage-free feature set plus predicted `K_VRH` and `G_VRH`.",
+                "Print cross-validated accuracy and F1 score.",
+                "Generate and save a confusion matrix plot.",
+                "Save the classifier."
+            ],
+            "sub_task": "Ductility Classification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Apply all trained models to the 1068 uncharacterized materials.",
+                "Calculate the \"High-Performance Score\" as a weighted combination of normalized stability, mechanical confidence (inverse of interval width), and ductility bonus.",
+                "Generate a multi-panel visualization: scatter plot of stability vs. `K_VRH` (colored by ductility), histogram of scores, and ranked bar chart of top 20 candidates.",
+                "Save the final ranked candidate list."
+            ],
+            "sub_task": "Multi-Objective Pipeline Integration and Visualization",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Compute Mahalanobis distance in the compositional/structural feature space.",
+                "Flag OOD materials (distance > 97.5th percentile).",
+                "Generate a figure with three subplots: histogram of Mahalanobis distances (with threshold), PDP for stability vs. `tau` (with 0.8–1.0 band), and scatter plot of `K_VRH` vs. log-volume.",
+                "Save validation results and plots."
+            ],
+            "sub_task": "Validation and Physical Consistency Checks",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Synthesize all numerical metrics (R², RMSE, ROC-AUC, F1, MAE, interval widths, OOD counts).",
+                "Report the identities and scores of the top 20 High-Performance candidates.",
+                "Interpret feature importance rankings from Step 2 in the context of perovskite chemistry (e.g., role of `tau`).",
+                "Write the final Results section of the report."
+            ],
+            "sub_task": "Final Results Reporting",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
