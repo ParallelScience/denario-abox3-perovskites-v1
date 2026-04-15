@@ -1,0 +1,93 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Load the dataset from the provided CSV path.",
+                "Remove columns identified as null or zero-variance: `surface_energy`, `work_function`, `A_period`, and `B_period`.",
+                "Drop duplicate columns and ensure `material_id` is set as the index.",
+                "Apply log-transformation to `volume` and `elastic_anisotropy`.",
+                "Engineer new physical features: `abs_tau_diff` = `abs(tau - 1.0)`, `radius_diff` = `A_radius - B_radius`, and `ie_ratio` = `A_ie1 / B_ie1`.",
+                "Drop `radius_ratio` to mitigate multicollinearity.",
+                "Print a detailed summary of the cleaned dataset (shape, column list, null counts, and descriptive statistics for `abs_tau_diff`, `radius_diff`, and `ie_ratio`).",
+                "Save the cleaned dataset to a new CSV file."
+            ],
+            "sub_task": "Data Preprocessing and Feature Engineering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Load the cleaned dataset from Step 1.",
+                "Define the target variable `is_stable` (True if `energy_above_hull` == 0, False otherwise).",
+                "Encode categorical features (`crystal_system`, `magnetic_ordering`) using one-hot encoding.",
+                "Print the full list of one-hot encoded column names.",
+                "Split the data into training and hold-out test sets (80/20).",
+                "Print the exact class distribution (count and percentage) of `is_stable` in both training and test sets.",
+                "Save these splits."
+            ],
+            "sub_task": "Thermodynamic Stability Dataset Preparation",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Load the cleaned dataset from Step 1.",
+                "Filter the 215-sample elastic subset: retain only samples where 0 < `K_VRH` < 300 GPa and 0 < `G_VRH` < 200 GPa.",
+                "Print the number of samples retained and descriptive statistics (mean, std, min, max) of the filtered `K_VRH` and `G_VRH`.",
+                "Prepare the regression targets `K_VRH` and `G_VRH`.",
+                "Save the filtered elastic subset."
+            ],
+            "sub_task": "Mechanical Property Dataset Preparation",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a Gradient Boosted Classifier (e.g., XGBoost) to predict `is_stable`.",
+                "Address class imbalance using `scale_pos_weight`.",
+                "Perform hyperparameter optimization using stratified k-fold cross-validation.",
+                "Print cross-validation results (mean/std of ROC-AUC, F1, precision, recall) and the final test-set confusion matrix/classification report.",
+                "Conduct feature importance analysis and save the model and importance metrics."
+            ],
+            "sub_task": "Thermodynamic Stability Classifier Training",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train two separate regressors (e.g., Random Forest) to predict `K_VRH` and `G_VRH` using the filtered subset from Step 3.",
+                "Ensure no thermodynamic stability targets are included as features.",
+                "Print cross-validated R² and MAE for both regressors and the top-10 most important features for each.",
+                "Save the trained models."
+            ],
+            "sub_task": "Mechanical Property Regressor Training",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Apply the stability classifier and mechanical regressors to the 1068 uncharacterized materials.",
+                "Define a \"Mechanical Viability\" score: 50 GPa < `K_VRH` < 250 GPa and `G_VRH` > 0 GPa.",
+                "Print the count of materials passing the viability threshold and the count of those with stability probability > 0.5.",
+                "Combine stability probability and mechanical viability into a final ranking score.",
+                "Print the top-20 ranked candidates (formula, `material_id`, scores) and save the final results."
+            ],
+            "sub_task": "Multi-Objective Pipeline Integration and Prediction",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Generate a composite figure with subplots: (a) feature importance bar chart for the stability classifier, (b) scatter plot of predicted `K_VRH` vs. `G_VRH` colored by stability probability, (c) `tau` vs. stability probability scatter plot, and (d) histogram of final multi-objective ranking scores.",
+                "Perform sensitivity analysis on `tau` vs. stability/mechanical properties.",
+                "Save the composite plot to the database folder."
+            ],
+            "sub_task": "Visualization and Sensitivity Analysis",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Synthesize findings, referencing all printed numerical outputs from Steps 1–7.",
+                "Structure the report with labeled subsections: Data Preprocessing, Stability Classification, Mechanical Property Regression, Pipeline Integration, and Sensitivity Analysis.",
+                "Interpret the \"Mechanical Viability\" scores and the identified high-performance candidates.",
+                "Discuss the implications of structural descriptors (e.g., `tau`) on material stability and robustness."
+            ],
+            "sub_task": "Final Results Reporting",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}

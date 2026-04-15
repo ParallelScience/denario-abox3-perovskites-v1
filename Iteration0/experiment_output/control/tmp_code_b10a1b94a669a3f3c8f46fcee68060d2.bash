@@ -1,0 +1,1 @@
+/opt/denario-venv/bin/python -m pip install xgboost scikit-learn pandas numpy joblib
