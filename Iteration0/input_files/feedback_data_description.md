@@ -1,0 +1,5 @@
+The analysis results are directly impacted by the "Elastic data sparsity" constraint described in the dataset inventory. Specifically:
+
+1. **Constraint**: The dataset description explicitly notes that only 215/1283 (17%) of materials have computed elastic constants.
+2. **Impact**: This limitation forced the research plan to adopt a two-stage pipeline where mechanical properties are predicted using a significantly smaller subset than the thermodynamic stability classifier. This creates a discrepancy in the statistical power and potential for overfitting between the two stages.
+3. **Affected Conclusions**: The reliability of the "Mechanical Viability" ranking for the 1068 uncharacterized materials is entirely dependent on the generalization of models trained on this sparse 17% subset. The analysis acknowledges this by noting the "extreme sparsity" of the elastic data, which confirms that the model's performance on the uncharacterized 83% of the dataset is an extrapolation rather than a direct observation.
