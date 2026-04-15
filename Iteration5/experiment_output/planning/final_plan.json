@@ -1,0 +1,87 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Load the dataset and remove columns with zero variance (surface_energy, work_function, A_period, B_period).",
+                "Drop duplicate elemental descriptor columns (e.g., A_site.1, B_site.1) and radius_ratio to mitigate multicollinearity.",
+                "Apply log-transform to volume and elastic_anisotropy.",
+                "Calculate Valence Electron Count (VEC) for each compound.",
+                "Perform one-hot encoding for magnetic_ordering and crystal_system.",
+                "Save the cleaned and feature-engineered dataset to a new CSV file.",
+                "Print the shape of the dataset before and after cleaning to confirm the correct number of rows and columns."
+            ],
+            "sub_task": "Data Preprocessing and Feature Engineering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Frame stability prediction as a binary classification task (is_stable).",
+                "Train a gradient-boosted classifier (e.g., XGBoost or LightGBM) using formation_energy_per_atom, tau, mu, en_diff, spacegroup_number, density, A_Z, B_Z, A_en, B_en, and one-hot encoded crystal_system.",
+                "Report cross-validated ROC-AUC, F1, and precision-recall metrics.",
+                "Generate and save a feature importance plot.",
+                "Save the predicted stability probability for each material to the dataset."
+            ],
+            "sub_task": "Thermodynamic Stability Classification",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Filter the elastic subset (215 samples) to remove unphysical outliers (K_VRH > 300 GPa, G_VRH < 0 GPa, or K_VRH <= 0 GPa) and print the number of samples remaining.",
+                "Train Gaussian Process Regressors (GPR) for K_VRH and G_VRH using density, crystal_system, and composition-based features.",
+                "Generate and save a diagnostic plot showing GPR predictions vs. actual values on a held-out test set with uncertainty bands.",
+                "Derive and save the predicted Pugh_ratio (G/K) and propagate predictive variances (sigma^2) for the 1068 uncharacterized materials."
+            ],
+            "sub_task": "Mechanical Viability Modeling",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Train a classifier to predict is_metal (band_gap = 0) and report class balance and cross-validated ROC-AUC.",
+                "Train a Random Forest regressor on the non-metallic subset to predict the continuous band_gap.",
+                "Generate and save a combined diagnostic figure: (1) confusion matrix for is_metal classifier, (2) scatter plot of predicted vs. actual band_gap with RMSE and MAE annotated.",
+                "Save the predicted band gap values to the dataset."
+            ],
+            "sub_task": "Electronic Hurdle Modeling",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Construct a multi-objective space for the 1068 uncharacterized materials using predicted stability probability (from Step 2) and mechanical uncertainty (from Step 3).",
+                "Identify the Pareto-optimal set of candidates.",
+                "Generate a scatter plot visualizing the trade-off, color-coded by predicted band_gap, and annotate the top 10 Pareto-optimal candidates with their formula labels.",
+                "Save the plot as a high-resolution PNG."
+            ],
+            "sub_task": "Pareto-Front Candidate Optimization and Visualization",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Perform PCA on the feature space to visualize the distribution of the 1068 uncharacterized materials relative to the training set.",
+                "Apply a diversity filter by clustering candidates based on chemsys and exclude metallic candidates.",
+                "Generate and save a figure with two subplots: (1) PCA biplot, (2) bar chart of candidates per chemsys cluster.",
+                "Print the full list of final high-performance candidates (formula, material_id, predicted K_VRH, predicted G_VRH, stability rank, predicted band_gap) in a formatted table."
+            ],
+            "sub_task": "Applicability Domain and Diversity Filtering",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Perform sensitivity analysis on the top-10 Pareto-optimal candidates by perturbing A_radius, B_radius, tau, and mu by ±5%.",
+                "Assess the stability of Pugh_ratio predictions and classify candidates as \"robustly ductile\", \"robustly brittle\", or \"ambiguous\".",
+                "Generate and save a plot showing the distribution of Pugh_ratio predictions across perturbations for each candidate."
+            ],
+            "sub_task": "Sensitivity Analysis",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Synthesize all quantitative model performance metrics (ROC-AUC, F1, RMSE, MAE) from Steps 2–4.",
+                "Describe the Pareto-front candidates and interpret the sensitivity analysis results regarding physical robustness.",
+                "Discuss the limitations of the GPR mechanical predictions (small training set) and the systematic PBE band gap underestimation.",
+                "Summarize the final list of candidates and provide physical insights into the composition–structure–property relationships."
+            ],
+            "sub_task": "Final Reporting and Synthesis",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
