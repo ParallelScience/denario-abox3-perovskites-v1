@@ -1,0 +1,8 @@
+{
+  "primary_category": "cond-mat.mtrl-sci",
+  "secondary_categories": [
+    "cs.LG",
+    "physics.comp-ph"
+  ],
+  "justification": "The paper focuses on the computational discovery and characterization of ABO3 perovskite materials, which falls squarely under materials science. The use of machine learning (gradient boosting, Gaussian process regression) for property prediction and multi-objective optimization justifies the inclusion of computer science (machine learning) and computational physics categories."
+}

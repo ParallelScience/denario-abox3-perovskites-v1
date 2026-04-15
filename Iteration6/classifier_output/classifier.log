@@ -1,0 +1,95 @@
+
+###### PROMPT BEGINS ########
+Human: You are a scientific paper classifier. Your task is to determine the most appropriate top-level arXiv archive for the following paper.
+
+**Paper Title:** A Two-Stage Classification Pipeline for Discovering Thermodynamically Stable and Mechanically Robust ABO3 Perovskites
+
+**Abstract:** High-throughput discovery of novel ABO$_3$ perovskites is frequently impeded by computational datasets containing sparse and physically unreliable elastic properties. To overcome this challenge, we introduce a two-stage classification pipeline that circumvents direct regression on noisy data by sequentially filtering for thermodynamic stability and mechanical viability. First, a gradient boosting classifier, trained on a dataset of 1283 compounds, predicts thermodynamic stability, employing a rigorous Leave-One-Cluster-Out cross-validation to ensure the model generalizes across diverse chemical families. Second, instead of regressing on flawed elastic moduli, a dedicated classifier trained on a physically-filtered subset of materials distinguishes mechanically viable structures from unstable or unphysical ones with high fidelity. We integrate these models into a multi-objective optimization framework to screen 1068 uncharacterized materials, explicitly penalizing candidates with high predictive uncertainty derived from Gaussian Process Regression to ensure reliability. This integrated approach successfully identifies a Pareto front of 16 promising candidates that optimally balance stability and mechanical robustness. Our methodology shortlists novel materials, including DyVO$_3$ and YCrO$_3$, for targeted computational and experimental validation, demonstrating that a classification-first strategy is a powerful tool for navigating imperfect materials data.
+
+**Archives:**
+- astro-ph: Astrophysics — cosmology, galaxies, stellar physics, planetary science, high-energy astrophysics, instrumentation
+- cond-mat: Condensed Matter — materials science, superconductivity, quantum gases, soft matter, statistical mechanics
+- cs: Computer Science — AI, machine learning, NLP, computer vision, algorithms, networking, security, software
+- econ: Economics — econometrics, general economics, theoretical economics
+- eess: Electrical Engineering and Systems Science — signal processing, image/video processing, audio/speech, control
+- gr-qc: General Relativity and Quantum Cosmology — gravitational physics, gravitational waves, black holes
+- hep-ex: High Energy Physics - Experiment — particle physics experiments, collider results
+- hep-lat: High Energy Physics - Lattice — lattice field theory, lattice QCD
+- hep-ph: High Energy Physics - Phenomenology — theoretical particle physics connected to experiment
+- hep-th: High Energy Physics - Theory — string theory, quantum field theory, supersymmetry
+- math: Mathematics — algebra, geometry, topology, analysis, probability, number theory, optimization
+- math-ph: Mathematical Physics — mathematical methods for physics problems
+- nlin: Nonlinear Sciences — chaos, pattern formation, solitons, integrable systems, self-organization
+- nucl-ex: Nuclear Experiment — experimental nuclear physics
+- nucl-th: Nuclear Theory — nuclear structure theory, hadron models, neutron stars
+- physics: Physics (General) — classical, computational, fluid dynamics, optics, plasma, applied, biological, chemical physics
+- q-bio: Quantitative Biology — biomolecules, genomics, neuroscience, populations, quantitative methods
+- q-fin: Quantitative Finance — computational finance, portfolio management, risk, pricing, trading
+- quant-ph: Quantum Physics — quantum information, computation, entanglement, foundations, optics
+- stat: Statistics — methodology, applications, machine learning (with statistical grounding), computation
+
+Select the single most appropriate archive for this paper. If the paper spans multiple fields, choose the one where the paper makes its primary contribution.
+
+###### PROMPT ENDS ########
+
+archive='cond-mat' justification='The paper focuses on the computational discovery and characterization of ABO3 perovskite materials, which is a core topic within condensed matter physics and materials science.'
+###### PROMPT BEGINS ########
+Human: You are a scientific paper classifier. You have already determined that this paper belongs to the **cond-mat** archive on arXiv. Now select the specific subcategory.
+
+**Paper Title:** A Two-Stage Classification Pipeline for Discovering Thermodynamically Stable and Mechanically Robust ABO3 Perovskites
+
+**Abstract:** High-throughput discovery of novel ABO$_3$ perovskites is frequently impeded by computational datasets containing sparse and physically unreliable elastic properties. To overcome this challenge, we introduce a two-stage classification pipeline that circumvents direct regression on noisy data by sequentially filtering for thermodynamic stability and mechanical viability. First, a gradient boosting classifier, trained on a dataset of 1283 compounds, predicts thermodynamic stability, employing a rigorous Leave-One-Cluster-Out cross-validation to ensure the model generalizes across diverse chemical families. Second, instead of regressing on flawed elastic moduli, a dedicated classifier trained on a physically-filtered subset of materials distinguishes mechanically viable structures from unstable or unphysical ones with high fidelity. We integrate these models into a multi-objective optimization framework to screen 1068 uncharacterized materials, explicitly penalizing candidates with high predictive uncertainty derived from Gaussian Process Regression to ensure reliability. This integrated approach successfully identifies a Pareto front of 16 promising candidates that optimally balance stability and mechanical robustness. Our methodology shortlists novel materials, including DyVO$_3$ and YCrO$_3$, for targeted computational and experimental validation, demonstrating that a classification-first strategy is a powerful tool for navigating imperfect materials data.
+
+**Methods (if available):** \subsection{Dataset and feature engineering}
+The foundation of this study is a dataset comprising 1283 unique ABO$_3$ perovskite compounds sourced from a high-throughput computational materials database. For each compound, we utilized a set of structural and chemical features derived from its stoichiometry and relaxed crystal structure. Key descriptors included the Goldschmidt tolerance factor ($\tau$) and the octahedral factor ($\mu$), which quantify the geometric compatibility of the constituent ions within the perovskite lattice. To capture the effects of structural strain, we engineered features representing the deviation from ideal geometries, namely $\tau_{strain} = |\tau - 1.0|$ and $\mu_{strain} = |\mu - 0.57|$. Additional features included elemental properties such as ionic radii and electronegativity differences, as well as macroscopic properties like density and formation energy per atom. The crystal volume was log-transformed to mitigate the influence of its skewed distribution. Finally, the space group number of each compound was used to classify it into one of the 23 Glazer tilt systems, providing a categorical representation of the octahedral tilting patterns.
+
+The target properties for our models were thermodynamic stability, mechanical properties, and electronic band gap. Thermodynamic stability was treated as a binary classification label, where a material with an energy above the convex hull ($E_{hull}$) of 0 eV/atom was labeled as stable. Mechanical properties were represented by the Voigt-Reuss-Hill (VRH) averages of the bulk ($K_{VRH}$) and shear ($G_{VRH}$) moduli. The electronic band gap was used as a continuous target variable.
+
+\subsection{Thermodynamic stability model}
+To predict thermodynamic stability, we trained a Gradient Boosting Classifier (GBC). The classification task was framed to distinguish stable compounds ($E_{hull} = 0$ eV/atom) from metastable ones ($E_{hull} > 0$ eV/atom). Given the significant class imbalance in the dataset, where only 13.1\% of the compounds are stable, model evaluation was performed using the Area Under the Precision-Recall Curve (AUC-PR), which is more informative than accuracy or ROC-AUC for imbalanced problems.
+
+To ensure the model's ability to generalize to new chemical families, we employed a rigorous Leave-One-Cluster-Out (LOCO) cross-validation strategy. In this scheme, the data was partitioned into 53 clusters, each containing all compounds with the same A-site element. During each fold of the cross-validation, the model was trained on 52 clusters and validated on the single held-out cluster, thereby testing its performance on entirely unseen chemical compositions.
+
+\subsection{Mechanical property models}
+The raw dataset for mechanical properties was both sparse, with elastic constants available for only 16.8\% of the compounds, and contaminated with unphysical values such as negative or extremely large moduli. To address this, we first applied a physical filter, creating a training subset of 207 materials that satisfied the criteria $0 < K_{VRH} < 300$ GPa and $G_{VRH} > 0$.
+
+Our primary approach to mechanical robustness was to reframe the problem from regression to classification. A Mechanical Viability Classifier, also a GBC model, was trained on the full 215-sample subset to distinguish the 207 physically consistent compounds from the unphysical or unstable ones. This model provides a direct probabilistic score of a material's mechanical viability. Its performance was assessed using 5-fold stratified cross-validation, with metrics including accuracy, F1 score, precision, and recall.
+
+To quantify the uncertainty of predictions for uncharacterized materials, we also trained a Gaussian Process Regressor (GPR) on the 207-sample filtered subset to predict $K_{VRH}$ and $G_{VRH}$. The GPR employed a composite kernel consisting of a Constant kernel multiplied by a Mat\'{e}rn kernel with $\nu=1.5$, summed with a WhiteKernel to account for noise. The primary output from the GPR used in our subsequent analysis was the predictive variance, $\sigma^2$, which serves as a measure of the model's confidence for any given prediction.
+
+\subsection{Electronic property model}
+The distribution of the electronic band gap is bimodal, with 48.6\% of the materials being metals (band gap = 0 eV). To accurately model this zero-inflated distribution, we implemented a two-stage Hurdle model.
+\begin{enumerate}
+    \item \textbf{Metallicity Classifier:} A GBC was trained to solve a binary classification problem: predicting whether a material is a metal (`is\_metal` = True) or not.
+    \item \textbf{Band Gap Regressor:} A Gradient Boosting Regressor (GBR) was trained exclusively on the subset of non-metallic compounds. The target variable for this model was the log-transformed band gap, $\log(1 + \text{band\_gap})$, to handle the right-skewed distribution of non-zero values.
+\end{enumerate}
+The final band gap prediction for a given material was determined by first applying the classifier. If the material was predicted to be a metal, its band gap was set to 0 eV. Otherwise, the regressor was used to predict the log-transformed band gap, which was then converted back to the original scale. The performance of the integrated Hurdle model was evaluated using the Mean Absolute Error (MAE) on a held-out test set.
+
+\subsection{Multi-objective optimization for candidate screening}
+We developed a multi-objective optimization framework to screen the 1068 uncharacterized compounds in our dataset. The goal was to identify novel candidates that simultaneously exhibit high thermodynamic stability and high mechanical robustness, while also ensuring the reliability of the predictions. The two primary objectives for maximization were:
+\begin{enumerate}
+    \item The predicted probability of thermodynamic stability from the LOCO-validated GBC.
+    \item The predicted probability of mechanical viability from the dedicated viability classifier.
+\end{enumerate}
+To explicitly account for model uncertainty, we introduced a penalty term derived from the GPR models. The mechanical viability score was adjusted by a penalty proportional to the model's predictive uncertainty. The penalized viability score for a candidate material $i$ was calculated as:
+\begin{equation}
+    S_{penalized}(i) = P_{viability}(i) \times \left(1 - \frac{\bar{\sigma}^2(i) - \min(\bar{\sigma}^2)}{\max(\bar{\sigma}^2) - \min(\bar{\sigma}^2)}\right)
+\end{equation}
+where $P_{viability}(i)$ is the raw probability from the viability classifier and $\bar{\sigma}^2(i)$ is the average predictive variance from the GPR models for $K_{VRH}$ and $G_{VRH}$ for that material. This formulation penalizes candidates for which the model has low confidence, steering the search towards more reliable regions of the chemical space. By plotting the candidates in the space defined by stability probability and penalized viability, we identified a Pareto front of optimal materials representing the best trade-offs between the competing objectives.
+
+**Available subcategories in cond-mat:**
+- cond-mat.dis-nn: Disordered Systems and Neural Networks — Glasses and spin glasses; properties of random, aperiodic and quasiperiodic systems; transport in disordered media; localization; neural networks.
+- cond-mat.mes-hall: Mesoscale and Nanoscale Physics — Semiconducting nanostructures: quantum dots, wires, and wells. Single electronics, spintronics, 2D electron systems, quantum Hall effect, nanotubes, graphene.
+- cond-mat.mtrl-sci: Materials Science — Techniques, synthesis, characterization, structure. Structural phase transitions, mechanical properties, phonons, defects.
+- cond-mat.other: Other Condensed Matter — Work addressing condensed matter topics not fitting other condensed matter classifications.
+- cond-mat.quant-gas: Quantum Gases — Ultracold atomic and molecular gases, Bose-Einstein condensation, Feshbach resonances, atom-molecule mixtures, quantum simulations.
+- cond-mat.soft: Soft Condensed Matter — Membranes, polymers, liquid crystals, glasses, colloids, granular matter, foams, biological physics.
+- cond-mat.stat-mech: Statistical Mechanics — Phase transitions, thermodynamics, field theory, non-equilibrium phenomena, renormalization group, percolation, exactly solvable models.
+- cond-mat.str-el: Strongly Correlated Electrons — Quantum magnetism, non-Fermi liquids, spin liquids, quantum criticality, heavy fermions, Kondo physics, Mott transition.
+- cond-mat.supr-con: Superconductivity — Superconductivity: theory, models, experiment. Superflow in helium. High-temperature superconductors.
+
+Select one primary subcategory and up to 3 secondary subcategories (from any archive) that also apply. The primary must be from the list above. Secondary categories may come from any arXiv category if the paper is interdisciplinary.
+
+###### PROMPT ENDS ########
+
+primary_category='cond-mat.mtrl-sci' secondary_categories=['cs.LG', 'physics.comp-ph'] justification='The paper focuses on the computational discovery and characterization of ABO3 perovskite materials, which falls squarely under materials science. The use of machine learning (gradient boosting, Gaussian process regression) for property prediction and multi-objective optimization justifies the inclusion of computer science (machine learning) and computational physics categories.'

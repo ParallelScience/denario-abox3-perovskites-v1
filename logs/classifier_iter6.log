@@ -1,0 +1,7 @@
+Classifier: Step 1 — Determining archive...
+  Archive: cond-mat — The paper focuses on the computational discovery and characterization of ABO3 perovskite materials, which is a core topic within condensed matter physics and materials science.
+Classifier: Step 2 — Determining subcategory within 'cond-mat'...
+  Primary: cond-mat.mtrl-sci
+  Secondary: cs.LG, physics.comp-ph
+  Justification: The paper focuses on the computational discovery and characterization of ABO3 perovskite materials, which falls squarely under materials science. The use of machine learning (gradient boosting, Gaussian process regression) for property prediction and multi-objective optimization justifies the inclusion of computer science (machine learning) and computational physics categories.
+Classification completed in 0 min 3 sec. Cost: $0.0000
