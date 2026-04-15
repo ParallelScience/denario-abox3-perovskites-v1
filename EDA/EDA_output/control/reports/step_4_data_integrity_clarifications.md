@@ -1,0 +1,13 @@
+<!-- filename: reports/step_4_data_integrity_clarifications.md -->
+# Data Clarification and Integrity Questions
+
+Upon reviewing the initial exploratory data analysis, several ambiguities regarding the dataset's construction and physical implications have emerged. To ensure the scientific validity of subsequent modeling and interpretation, the following points require clarification:
+
+**1. Representativeness of the Elastic Property Subset**
+Only 215 out of the 1283 materials (approximately 17%) possess computed elastic constants (e.g., `K_VRH`, `G_VRH`). Is this subset a representative sample of the broader chemical and structural space of the dataset? Specifically, is the availability of elastic data biased towards thermodynamically stable compounds (i.e., `energy_above_hull` = 0), specific crystal systems (e.g., predominantly cubic), or certain elemental compositions? If a systematic selection bias exists, it could introduce significant covariate shift when training surrogate models to predict mechanical properties for the remaining 1068 materials.
+
+**2. Potential DFT Convergence Artifacts in Thermodynamic Stability**
+The `energy_above_hull` distribution exhibits a heavy tail, with a maximum value reaching 4.16 eV/atom and 125 statistical outliers identified via the IQR method. Do these highly positive values represent physically realizable, albeit highly metastable, local minima on the potential energy surface? Alternatively, could these extreme values be indicative of DFT convergence artifacts, unrelaxed structural configurations, or dynamically unstable phases that lack imaginary phonon frequency verification? Clarification is needed to determine whether a cutoff threshold should be applied to filter out unphysical structures before downstream analysis.
+
+**3. Ambiguity in A-Site and B-Site Elemental Assignments**
+The dataset overview indicates an overlap between the candidate elements for the A-site and B-site (e.g., Ti, Zr, Hf, V, Nb, Ta, Bi, Pb, and Sb are present in both sets). For compounds containing two elements from this intersection, what is the exact heuristic used to assign an element to the A-site versus the B-site? Is the assignment derived rigorously from the crystallographic Wyckoff positions and coordination environments in the relaxed DFT structure, or is it inferred from empirical rules such as ionic radii ratios, electronegativity differences, or simply the parsing of the chemical formula string? Resolving this is critical, as structural descriptors like the Goldschmidt tolerance factor (`tau`) and octahedral factor (`mu`) are highly sensitive to correct site assignment.

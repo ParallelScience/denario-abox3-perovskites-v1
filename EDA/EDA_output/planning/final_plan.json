@@ -1,0 +1,59 @@
+{
+    "sub_tasks": [
+        {
+            "bullet_points": [
+                "Load the dataset from the provided CSV path.",
+                "Print shape, column names, and data types.",
+                "Check for missing values (NaNs), infinite values, and duplicate material_id entries.",
+                "Print the first and last 5 rows.",
+                "Count unique values for crystal_system, magnetic_ordering, A_site, B_site, and spacegroup_symbol.",
+                "Verify nelements is always 3, band_gap >= 0, and energy_above_hull >= -0.01 eV/atom."
+            ],
+            "sub_task": "Data loading and integrity check",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Compute summary statistics (mean, std, min, max, percentiles) for all numeric columns.",
+                "Compute value counts and percentages for boolean (theoretical, is_stable, is_metal, is_gap_direct, is_magnetic) and categorical columns.",
+                "Identify outliers using the IQR method for volume, band_gap, K_VRH, G_VRH, formation_energy_per_atom, energy_above_hull, tau, and mu.",
+                "Calculate and print a correlation matrix for physically meaningful pairs (structural vs. thermodynamic, elemental vs. band gap)."
+            ],
+            "sub_task": "Statistical characterization and outlier detection",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Generate a multi-panel figure:",
+                "Bar chart of crystal_system frequency.",
+                "Histograms for formation_energy_per_atom, band_gap, volume, and tau.",
+                "Distributions of elastic properties (K_VRH, G_VRH, poisson_ratio, elastic_anisotropy) for the 215 available entries.",
+                "Scatter plot of tau vs. energy_above_hull colored by crystal_system.",
+                "Heatmap of the correlation matrix from Step 2.",
+                "Save all plots as high-resolution PNG files in the designated directory."
+            ],
+            "sub_task": "Visualization of property distributions",
+            "sub_task_agent": "engineer"
+        },
+        {
+            "bullet_points": [
+                "Review findings from the engineer's reports.",
+                "Compile clarifying questions regarding:",
+                "Representativeness of the 215-material elastic subset.",
+                "Potential DFT convergence artifacts in energy_above_hull.",
+                "Ambiguity in site assignment due to A/B-site element overlap."
+            ],
+            "sub_task": "Questions report (report1)",
+            "sub_task_agent": "researcher"
+        },
+        {
+            "bullet_points": [
+                "Synthesize all findings into a comprehensive report.",
+                "Address: property ranges/distributions, metal/insulator/semiconductor fractions, tau vs. crystal system relationships, skewness/heavy tails for ML, and a data completeness summary table.",
+                "Provide recommendations for future modeling."
+            ],
+            "sub_task": "EDA findings report (report2)",
+            "sub_task_agent": "researcher"
+        }
+    ]
+}
